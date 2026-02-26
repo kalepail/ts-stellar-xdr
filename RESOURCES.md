@@ -1,0 +1,13 @@
+- https://github.com/stellar/dts-xdr
+- https://github.com/stellar/js-xdr
+- https://github.com/stellar/js-stellar-base
+- https://github.com/stellar/js-stellar-sdk
+- https://github.com/tomerweller/ts-xdr
+- https://github.com/stellar/rs-stellar-xdr
+- https://github.com/stellar/xdrgen
+- https://github.com/stellar/stellar-xdr
+- https://github.com/stellar/js-stellar-xdr-json
+- https://github.com/stellar/go-xdr
+- https://github.com/stellar/go-stellar-xdr-json
+- https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0051.md
+- https://raw.githubusercontent.com/stellar/rs-stellar-xdr/main/xdr-json/curr/TransactionEnvelope.json
