@@ -1,17 +1,25 @@
 /**
  * XDR code generator CLI
- * Usage: bun scripts/codegen/index.ts
+ * Usage: bun scripts/codegen/index.ts [--ref <git-ref>]
  *
- * Fetches Stellar XDR .x files from stellar/stellar-xdr (curr branch)
- * and generates TypeScript types + codec functions in src/generated/
+ * Fetches Stellar XDR .x files from stellar/stellar-xdr and generates
+ * TypeScript types + codec functions in src/generated/.
  */
 
 import { tokenize } from './lexer.js'
 import { parse } from './parser.js'
-import { generateTypeScript, setKindRegistry, setValueResolver, setEnumPrefixMap, computeEnumPrefix } from './generator.js'
-import type { XdrFile } from './ast.js'
+import {
+  computeEnumPrefix,
+  enumMemberJsonName,
+  generateTypeScript,
+  setEnumPrefixMap,
+  setKindRegistry,
+  setValueResolver,
+} from './generator.js'
+import type { XdrDefinition, XdrFile, XdrTypeRef } from './ast.js'
 
-const STELLAR_XDR_BASE = 'https://raw.githubusercontent.com/stellar/stellar-xdr/curr'
+const STELLAR_XDR_BASE_PREFIX = 'https://raw.githubusercontent.com/stellar/stellar-xdr'
+const DEFAULT_REF = 'curr'
 
 const XDR_FILES = [
   'Stellar-types.x',
@@ -47,8 +55,44 @@ const FILE_MAP: Record<string, string> = {
 
 const OUT_DIR = 'src/generated'
 
-async function fetchXdrFile(filename: string): Promise<string> {
-  const url = `${STELLAR_XDR_BASE}/${filename}`
+export interface CodegenCliArgs {
+  ref: string
+}
+
+export function parseCodegenCliArgs(argv: readonly string[]): CodegenCliArgs {
+  let ref = DEFAULT_REF
+  for (let i = 2; i < argv.length; i++) {
+    const arg = argv[i]!
+    if (arg === '--ref') {
+      const value = argv[i + 1]
+      if (value === undefined || value.startsWith('-')) {
+        throw new Error('Missing value for --ref')
+      }
+      ref = value
+      i++
+      continue
+    }
+    if (arg.startsWith('--ref=')) {
+      const value = arg.slice('--ref='.length)
+      if (!value) throw new Error('Missing value for --ref')
+      ref = value
+      continue
+    }
+    if (arg === '--help' || arg === '-h') {
+      printUsage()
+      return { ref }
+    }
+    throw new Error(`Unknown argument: ${arg}`)
+  }
+  return { ref }
+}
+
+export function getStellarXdrBase(ref: string): string {
+  return `${STELLAR_XDR_BASE_PREFIX}/${ref}`
+}
+
+async function fetchXdrFile(stellarXdrBase: string, filename: string): Promise<string> {
+  const url = `${stellarXdrBase}/${filename}`
   console.log(`Fetching ${url}...`)
   const response = await fetch(url)
   if (!response.ok) {
@@ -58,12 +102,16 @@ async function fetchXdrFile(filename: string): Promise<string> {
 }
 
 async function main() {
-  console.log('Fetching Stellar XDR definitions from stellar/stellar-xdr (curr branch)...\n')
+  const argv = typeof Bun !== 'undefined' ? Bun.argv : process.argv
+  const { ref } = parseCodegenCliArgs(argv)
+  const stellarXdrBase = getStellarXdrBase(ref)
+
+  console.log(`Fetching Stellar XDR definitions from stellar/stellar-xdr (${ref})...\n`)
 
   const parsed: Array<{ filename: string; ast: XdrFile }> = []
 
   for (const filename of XDR_FILES) {
-    const source = await fetchXdrFile(filename)
+    const source = await fetchXdrFile(stellarXdrBase, filename)
     const tokens = tokenize(source, filename)
     const ast = parse(tokens)
     parsed.push({ filename, ast })
@@ -191,6 +239,20 @@ async function main() {
   }
 
   // ---------------------------------------------------------------------------
+  // Write enum/union introspection metadata
+  // ---------------------------------------------------------------------------
+  const introspectionContent = generateIntrospectionMetadata(
+    parsed.flatMap(({ ast }) => ast.definitions),
+    kindRegistry,
+    valueResolver,
+    enumPrefixMap,
+    ref,
+  )
+  await Bun.write(`${OUT_DIR}/introspection.ts`, introspectionContent)
+  console.log(`  Wrote ${OUT_DIR}/introspection.ts`)
+  generatedFiles.push('introspection.ts')
+
+  // ---------------------------------------------------------------------------
   // Write src/generated/index.ts
   // ---------------------------------------------------------------------------
   const indexLines: string[] = [
@@ -211,7 +273,193 @@ async function main() {
   console.log('\nDone!')
 }
 
-main().catch((err) => {
-  console.error(err)
-  process.exit(1)
-})
+if (import.meta.main) {
+  main().catch((err) => {
+    console.error(err)
+    process.exit(1)
+  })
+}
+
+function printUsage(): void {
+  console.log('Usage: bun scripts/codegen/index.ts [--ref <git-ref>]')
+  console.log('Example: bun scripts/codegen/index.ts --ref next')
+}
+
+type EnumIntrospectionMember = {
+  name: string
+  value: number | null
+  jsonName: string
+}
+
+type UnionIntrospectionCase = {
+  raw: string | number
+  numericValue: number | null
+  jsonName: string
+}
+
+function generateIntrospectionMetadata(
+  definitions: XdrDefinition[],
+  kindRegistry: Map<string, string>,
+  valueResolver: Map<string, number>,
+  enumPrefixMap: Map<string, string>,
+  ref: string,
+): string {
+  const lines: string[] = [
+    '// AUTO-GENERATED — do not edit manually',
+    `// Run: bun scripts/codegen/index.ts --ref ${ref}`,
+    '',
+    'export interface EnumIntrospectionMember {',
+    '  readonly name: string',
+    '  readonly value: number | null',
+    '  readonly jsonName: string',
+    '}',
+    '',
+    'export interface EnumIntrospection {',
+    '  readonly name: string',
+    '  readonly prefix: string',
+    '  readonly members: readonly EnumIntrospectionMember[]',
+    '}',
+    '',
+    'export interface UnionIntrospectionCase {',
+    '  readonly raw: string | number',
+    '  readonly numericValue: number | null',
+    '  readonly jsonName: string',
+    '}',
+    '',
+    'export interface UnionIntrospectionArm {',
+    '  readonly name: string | null',
+    '  readonly type: string',
+    '  readonly cases: readonly UnionIntrospectionCase[]',
+    '}',
+    '',
+    "export type UnionDiscriminantKind = 'enum' | 'int'",
+    '',
+    'export interface UnionIntrospection {',
+    '  readonly name: string',
+    '  readonly discriminantName: string',
+    '  readonly discriminantType: string',
+    '  readonly discriminantKind: UnionDiscriminantKind',
+    '  readonly defaultArmType: string | null',
+    '  readonly arms: readonly UnionIntrospectionArm[]',
+    '}',
+    '',
+  ]
+
+  const enumDefs = definitions.filter((def): def is Extract<XdrDefinition, { kind: 'enum' }> => def.kind === 'enum')
+  const unionDefs = definitions.filter((def): def is Extract<XdrDefinition, { kind: 'union' }> => def.kind === 'union')
+
+  const enumEntries = enumDefs.map((def) => {
+    const prefix = enumPrefixMap.get(def.name) ?? ''
+    const members: EnumIntrospectionMember[] = def.members.map((member) => ({
+      name: member.name,
+      value: typeof member.value === 'number' ? member.value : (valueResolver.get(member.value) ?? null),
+      jsonName: enumMemberJsonName(member.name, prefix),
+    }))
+    return { name: def.name, prefix, members }
+  })
+
+  lines.push('export const ENUM_INTROSPECTION: Record<string, EnumIntrospection> = /*#__PURE__*/ {')
+  for (const entry of enumEntries) {
+    lines.push(`  ${q(entry.name)}: {`)
+    lines.push(`    name: ${q(entry.name)},`)
+    lines.push(`    prefix: ${q(entry.prefix)},`)
+    lines.push('    members: [')
+    for (const member of entry.members) {
+      lines.push(
+        `      { name: ${q(member.name)}, value: ${member.value ?? 'null'}, jsonName: ${q(member.jsonName)} },`,
+      )
+    }
+    lines.push('    ],')
+    lines.push('  },')
+  }
+  lines.push('}')
+  lines.push('')
+
+  const unionEntries = unionDefs.map((def) => {
+    const discriminantType = typeRefToString(def.discriminant.type)
+    const isEnumDiscriminant = def.discriminant.type.kind === 'named'
+      && kindRegistry.get(def.discriminant.type.name) === 'enum'
+    const enumPrefix = isEnumDiscriminant ? (enumPrefixMap.get(def.discriminant.type.name) ?? '') : ''
+
+    const arms = def.arms.map((arm) => {
+      const cases: UnionIntrospectionCase[] = arm.cases.map((caseValue) => ({
+        raw: caseValue,
+        numericValue: typeof caseValue === 'number' ? caseValue : (valueResolver.get(caseValue) ?? null),
+        jsonName: isEnumDiscriminant
+          ? enumMemberJsonName(String(caseValue), enumPrefix)
+          : `v${caseValue}`,
+      }))
+      return {
+        name: arm.name ?? null,
+        type: typeRefToString(arm.type),
+        cases,
+      }
+    })
+
+    return {
+      name: def.name,
+      discriminantName: def.discriminant.name,
+      discriminantType,
+      discriminantKind: isEnumDiscriminant ? 'enum' : 'int' as const,
+      defaultArmType: def.defaultArm ? typeRefToString(def.defaultArm) : null,
+      arms,
+    }
+  })
+
+  lines.push('export const UNION_INTROSPECTION: Record<string, UnionIntrospection> = /*#__PURE__*/ {')
+  for (const entry of unionEntries) {
+    lines.push(`  ${q(entry.name)}: {`)
+    lines.push(`    name: ${q(entry.name)},`)
+    lines.push(`    discriminantName: ${q(entry.discriminantName)},`)
+    lines.push(`    discriminantType: ${q(entry.discriminantType)},`)
+    lines.push(`    discriminantKind: ${q(entry.discriminantKind)},`)
+    lines.push(`    defaultArmType: ${entry.defaultArmType === null ? 'null' : q(entry.defaultArmType)},`)
+    lines.push('    arms: [')
+    for (const arm of entry.arms) {
+      lines.push('      {')
+      lines.push(`        name: ${arm.name === null ? 'null' : q(arm.name)},`)
+      lines.push(`        type: ${q(arm.type)},`)
+      lines.push('        cases: [')
+      for (const caseInfo of arm.cases) {
+        lines.push(
+          `          { raw: ${typeof caseInfo.raw === 'number' ? caseInfo.raw : q(caseInfo.raw)}, numericValue: ${caseInfo.numericValue ?? 'null'}, jsonName: ${q(caseInfo.jsonName)} },`,
+        )
+      }
+      lines.push('        ],')
+      lines.push('      },')
+    }
+    lines.push('    ],')
+    lines.push('  },')
+  }
+  lines.push('}')
+  lines.push('')
+
+  return lines.join('\n')
+}
+
+function typeRefToString(ref: XdrTypeRef): string {
+  switch (ref.kind) {
+    case 'primitive':
+      return ref.primitive
+    case 'named':
+      return ref.name
+    case 'opaque':
+      return `opaque[${ref.len}]`
+    case 'varOpaque':
+      return ref.maxLen === undefined ? 'opaque<>' : `opaque<${ref.maxLen}>`
+    case 'string':
+      return ref.maxLen === undefined ? 'string<>' : `string<${ref.maxLen}>`
+    case 'fixedArray':
+      return `${typeRefToString(ref.elementType)}[${ref.len}]`
+    case 'varArray':
+      return ref.maxLen === undefined
+        ? `${typeRefToString(ref.elementType)}<>`
+        : `${typeRefToString(ref.elementType)}<${ref.maxLen}>`
+    case 'optional':
+      return `${typeRefToString(ref.elementType)}*`
+  }
+}
+
+function q(value: string): string {
+  return JSON.stringify(value)
+}

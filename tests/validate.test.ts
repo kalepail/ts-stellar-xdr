@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   validateScVal,
   validateScMap,
+  buildSortedScMap,
   compareScVal,
   ScValValidationError,
 } from '../src/validate.ts'
@@ -243,6 +244,20 @@ describe('validateScMap', () => {
     ]
     expect(() => validateScMap(map)).toThrow(ScValValidationError)
   })
+
+  it('accepts complex key ordering via XDR fallback comparison', () => {
+    const map: SCMap = [
+      {
+        key: { type: 'SCV_U128', u128: { hi: 0n, lo: 1n } },
+        val: { type: 'SCV_VOID' },
+      },
+      {
+        key: { type: 'SCV_U128', u128: { hi: 0n, lo: 2n } },
+        val: { type: 'SCV_VOID' },
+      },
+    ]
+    expect(() => validateScMap(map)).not.toThrow()
+  })
 })
 
 describe('compareScVal', () => {
@@ -302,5 +317,34 @@ describe('compareScVal', () => {
     const a: SCVal = { type: 'SCV_VOID' }
     const b: SCVal = { type: 'SCV_VOID' }
     expect(compareScVal(a, b)).toBe(0)
+  })
+
+  it('compares complex values by XDR bytes', () => {
+    const a: SCVal = { type: 'SCV_U128', u128: { hi: 0n, lo: 1n } }
+    const b: SCVal = { type: 'SCV_U128', u128: { hi: 0n, lo: 2n } }
+    expect(compareScVal(a, b)).toBeLessThan(0)
+  })
+})
+
+describe('buildSortedScMap', () => {
+  it('sorts entries by SCVal key order', () => {
+    const sorted = buildSortedScMap([
+      { key: { type: 'SCV_SYMBOL', sym: 'b' }, val: { type: 'SCV_VOID' } },
+      { key: { type: 'SCV_SYMBOL', sym: 'a' }, val: { type: 'SCV_VOID' } },
+      { key: { type: 'SCV_U32', u32: 1 }, val: { type: 'SCV_VOID' } },
+    ])
+
+    expect(sorted.map((entry) => entry.key.type)).toEqual(['SCV_U32', 'SCV_SYMBOL', 'SCV_SYMBOL'])
+    expect((sorted[1]!.key as SCVal).type).toBe('SCV_SYMBOL')
+    expect((sorted[1]!.key as SCVal & { sym: string }).sym).toBe('a')
+  })
+
+  it('accepts any iterable input', () => {
+    const iterable = new Set([
+      { key: { type: 'SCV_U32', u32: 3 }, val: { type: 'SCV_VOID' } },
+      { key: { type: 'SCV_U32', u32: 1 }, val: { type: 'SCV_VOID' } },
+    ])
+    const sorted = buildSortedScMap(iterable)
+    expect(sorted.map((entry) => (entry.key as { u32: number }).u32)).toEqual([1, 3])
   })
 })

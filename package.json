@@ -54,6 +54,14 @@
     "./helpers": {
       "import": "./dist/helpers.js",
       "types": "./dist/helpers.d.ts"
+    },
+    "./scval": {
+      "import": "./dist/scval.js",
+      "types": "./dist/scval.d.ts"
+    },
+    "./framed": {
+      "import": "./dist/framed.js",
+      "types": "./dist/framed.d.ts"
     }
   },
   "files": [

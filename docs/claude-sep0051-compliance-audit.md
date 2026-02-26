@@ -280,48 +280,29 @@ Typedefs correctly delegate to their underlying type's toJson/fromJson. Examples
 
 ## 6. Test Coverage Analysis
 
-### Currently Tested (91 tests in `json.test.ts`)
+### Current Coverage (updated)
 
-| Area | Tests | Status |
-|---|---|---|
-| Int128/UInt128/Int256/UInt256 decimal conversion | 16 | GOOD |
-| AssetCode escape/unescape | 7 | GOOD |
-| Enum JSON (MemoType) | 3 | GOOD |
-| Union JSON (Memo) | 10 | GOOD |
-| Struct JSON (DecoratedSignature) | 2 | GOOD |
-| Typedef JSON (Hash → hex) | 2 | GOOD |
-| PublicKey JSON (StrKey G-address) | 2 | GOOD |
-| MuxedAccount JSON (StrKey G/M-address) | 4 | GOOD |
-| AssetCode JSON (4/12/union) | 9 | GOOD |
-| Int128/256 JSON roundtrip | 8 | GOOD |
-| Int128/256 dual deserialization | 5 | GOOD |
-| Full roundtrips (encode→toJson→fromJson→verify) | 6 | GOOD |
-| SEP-0051 string escaping | 15 | GOOD |
-| $schema property filtering | 4 | GOOD |
+- `tests/json.test.ts`: 171 tests
+- Additional SEP-adjacent coverage now lives in:
+  - `tests/strkey.test.ts`
+  - `tests/scval.test.ts`
+  - `tests/codegen.test.ts` (includes leading-digit enum JSON naming and introspection checks)
+  - `tests/framed.test.ts`
 
-### Recommended Test Additions (not blocking compliance)
+Coverage includes:
 
-The following are test coverage improvements, not compliance gaps:
+1. Primitive and complex SEP-0051 JSON forms
+2. Stellar-specific address rendering for G/C/M/B/L variants
+3. SignerKey variants G/T/X/P
+4. ClaimableBalanceID and PoolID StrKey JSON handling
+5. Int128/256 and UInt128/256 decimal string/object dual deserialization paths
+6. `$schema` filtering behavior in unions
+7. Enum prefix stripping with leading-digit safeguard (`b8_bit`, `b16_bit`, `b32_bit`) aligned with rs-stellar-xdr schema output
 
-1. **TransactionEnvelope end-to-end JSON roundtrip** — Take the `serde_tx.rs` test vector (base64 XDR → decode → toJson → verify exact JSON → fromJson → encode → verify bytes match). This would be the single most valuable test to add.
+### Remaining Recommended Additions (non-blocking)
 
-2. **SCAddress JSON** — Test all 5 SCAddress variants (G/C/M/B/L) through `toJsonSCAddress`/`fromJsonSCAddress`.
-
-3. **SignerKey JSON** — Test all 4 SignerKey variants (G/T/X/P) through `toJsonSignerKey`/`fromJsonSignerKey`.
-
-4. **ClaimableBalanceID JSON** — Test B-address StrKey encoding through `toJsonClaimableBalanceID`.
-
-5. **PoolID JSON** — Test L-address StrKey encoding through `toJsonPoolID`.
-
-6. **SignedPayload StrKey functional test** — Test P-address encode/decode roundtrip with real payload data (currently only version byte constant is verified in `strkey.test.ts`).
-
-7. **64-bit integers in arrays** — Verify that `uint64[]` serializes as `["1", "2", "3"]` (string-quoted elements), matching `serde_ints.rs` test vector.
-
-8. **Negative 64-bit integers** — Verify `ScVal::I64(-123)` produces `{"i64": "-123"}`.
-
-9. **Asset union JSON** — Test the full `Asset` type (not just `AssetCode`) including `"native"` void arm and `{"credit_alphanum4": {"asset_code": "ABCD", "issuer": "G..."}}` object arm.
-
-10. **JSON Schema validation** — Validate `toJson(TransactionEnvelope)` output against the published `TransactionEnvelope.json` schema from rs-stellar-xdr.
+1. TransactionEnvelope fixture roundtrip locked to `serde_tx.rs` canonical vectors in a single focused end-to-end test
+2. JSON Schema validation pass against `xdr-json/curr/TransactionEnvelope.json` in automated CI
 
 ---
 

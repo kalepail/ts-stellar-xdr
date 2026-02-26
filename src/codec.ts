@@ -575,6 +575,9 @@ export function validate<T>(
   }
 }
 
+/** js-xdr compatibility alias. */
+export const validateXDR = validate
+
 /**
  * Decode multiple values from a single byte stream (streaming/iterator decode).
  * Reads values one at a time until the buffer is exhausted.

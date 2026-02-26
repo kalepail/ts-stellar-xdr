@@ -11,7 +11,7 @@ import {
   readFixedArray, writeFixedArray,
   readVarArray, writeVarArray,
   beginComposite, endComposite,
-  encode, decode, decodeStream,
+  encode, decode, validate, validateXDR, decodeStream,
   bytesToBase64, base64ToBytes, bytesToHex, hexToBytes,
   XdrReadError, XdrWriteError,
   DEFAULT_LIMITS, LIMITS_NONE,
@@ -422,6 +422,18 @@ describe('encode/decode helpers', () => {
     const bytes = encode(value, writeInt32)
     const customLimits: XdrLimits = { maxDepth: 10, maxBytes: 100 }
     expect(decode(bytes, readInt32, customLimits)).toBe(value)
+  })
+
+  it('validate() returns true for valid payloads and false for invalid payloads', () => {
+    const good = encode(123, writeInt32)
+    const bad = encode(123n, writeUint64) // wrong type/size for readInt32
+    expect(validate(good, readInt32)).toBe(true)
+    expect(validate(bad, readInt32)).toBe(false)
+  })
+
+  it('validateXDR alias matches validate()', () => {
+    const bytes = encode(7, writeInt32)
+    expect(validateXDR(bytes, readInt32)).toBe(validate(bytes, readInt32))
   })
 })
 

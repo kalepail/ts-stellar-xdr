@@ -71,7 +71,7 @@ for the Stellar network.
 - **ESM-only** — `"type": "module"` with `.js` import extensions
 
 ### Tests
-- **254 tests passing** — codec primitives, roundtrip tests, strkey, hashing, validation, JSON serialization
+- **454 tests passing** — codec primitives, roundtrip tests, strkey, hashing, validation, JSON serialization, SCVal conversions, framed XDR, and codegen/introspection checks
 - **Write validation tests** — non-integer, NaN, Infinity, out-of-range for all integer types
 - **Depth/byte limit tests** — enforcement, tracking, custom limits, LIMITS_NONE
 - **Streaming decode tests** — multiple values, empty input, lazy generator, base64
@@ -498,7 +498,10 @@ and rs-stellar-xdr provide bidirectional conversion.
 **Priority:** LOW-MEDIUM. More of an SDK concern than XDR codec concern. Could live
 in a separate `@stellar/scval` or SDK-layer package. Already have ScVal validation.
 
-**Status:** Not started.
+**Status:** DONE. Implemented in `src/scval.ts`:
+- `nativeToScVal(val, opts?)` with integer coercion, string/bytes hints, address conversion, recursive vec/map conversion, and passthrough for existing `SCVal`.
+- `scValToNative(scv)` and `scValToBigInt(scv)` utilities.
+- Added 12 focused tests in `tests/scval.test.ts` based on js-stellar-base behavior patterns.
 
 ---
 
@@ -516,7 +519,7 @@ export function validate<T>(input: Uint8Array | string, readFn: (r: XdrReader) =
 
 **Priority:** LOW-MEDIUM. Simple convenience wrapper.
 
-**Status:** DONE. Added `validate(input, readFn, limits?)` to `src/codec.ts`.
+**Status:** DONE. Added `validate(input, readFn, limits?)` plus `validateXDR` compatibility alias in `src/codec.ts` and test coverage in `tests/codec.test.ts`.
 
 ---
 
@@ -550,7 +553,7 @@ sorted builder utilities.
 
 **Priority:** LOW. Pairs naturally with existing ScVal validation.
 
-**Status:** Not started.
+**Status:** DONE. Added `buildSortedScMap(entries)` to `src/validate.ts`, backed by deterministic key ordering via `compareScVal` with XDR-byte fallback for complex key variants. Added coverage in `tests/validate.test.ts`.
 
 ---
 
@@ -566,7 +569,11 @@ provides `Frame<T>` and `read_xdr_framed_iter()`.
 
 **Priority:** LOW. Useful for advanced use cases (bucket file processing, network protocols).
 
-**Status:** Not started.
+**Status:** DONE. Added `src/framed.ts` with:
+- `encodeFramed(value, writeFn)`
+- `decodeFramed(input, readFn, limits?)`
+- `decodeFramedStream(input, readFn, limits?)`
+Includes malformed-input and multi-fragment reassembly tests in `tests/framed.test.ts`.
 
 ---
 
@@ -580,7 +587,10 @@ provides `Frame<T>` and `read_xdr_framed_iter()`.
 
 **Priority:** LOW. Useful for testing upcoming protocol changes.
 
-**Status:** Not started.
+**Status:** DONE. `scripts/codegen/index.ts` now supports:
+- `bun scripts/codegen/index.ts --ref <git-ref>`
+- `--ref=<git-ref>` form
+Default remains `curr`. Added CLI arg parser tests in `tests/codegen.test.ts`.
 
 ---
 
@@ -589,12 +599,15 @@ provides `Frame<T>` and `read_xdr_framed_iter()`.
 **Source:** xdrgen (`name_short` in `enum_member.rb`)
 
 **Problem:** When stripping enum prefix, if the remaining name starts with a digit,
-xdrgen prepends the first character of the prefix. Our `enumMemberJsonName` does not
-handle this. No current Stellar enums trigger this.
+xdrgen prepends the first character of the prefix. Our `enumMemberJsonName` did not
+handle this. Current Stellar XDR includes this pattern (for example:
+`BINARY_FUSE_FILTER_8_BIT`).
 
-**Priority:** LOW. No current Stellar XDR triggers this.
+**Priority:** LOW-MEDIUM. Current Stellar XDR now includes matching members.
 
-**Status:** Not started.
+**Status:** DONE. Implemented xdrgen-aligned safeguard in
+`scripts/codegen/generator.ts` (`enumMemberJsonName`). Verified by generated
+JSON names and tests (`b8_bit`, `b16_bit`, `b32_bit`) in `tests/codegen.test.ts`.
 
 ---
 
@@ -606,7 +619,11 @@ handle this. No current Stellar enums trigger this.
 
 **Priority:** LOW. Useful for tooling but not typical application code.
 
-**Status:** Not started.
+**Status:** DONE. Added generated metadata in `src/generated/introspection.ts`:
+- `ENUM_INTROSPECTION`
+- `UNION_INTROSPECTION`
+Includes enum member values/json names and union discriminant/arm/case metadata.
+Exported via `src/generated/index.ts`, with validation tests in `tests/codegen.test.ts`.
 
 ---
 
@@ -615,7 +632,7 @@ handle this. No current Stellar enums trigger this.
 - **All 13 .x files processed** — matches all branches/tags of stellar-xdr
 - **No missing XDR types** — all 480+ definitions generated
 - **Binary codec is correct** — padding validation, depth/byte limits, strict bool decode
-- **JSON format matches for 11/19 custom types** (remaining 7-8 identified above)
+- **JSON format matches all `custom_str_impl` types currently tracked in scope**
 - **Parser handles all Stellar XDR syntax** — recursive types, anonymous structs, fall-through cases
 - **Reserved word escaping** — more thorough than xdrgen (45+ words vs xdrgen's 1)
 - **Forward references** — handled naturally by function hoisting (no `lazy()` needed)

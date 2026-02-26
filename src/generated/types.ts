@@ -1020,15 +1020,15 @@ export function decodeBinaryFuseFilterType(input: Uint8Array | string): BinaryFu
 }
 
 const _BINARY_FUSE_FILTER_TYPE_TO_JSON: Record<BinaryFuseFilterType, string> = /*#__PURE__*/ {
-  BINARY_FUSE_FILTER_8_BIT: '8_bit',
-  BINARY_FUSE_FILTER_16_BIT: '16_bit',
-  BINARY_FUSE_FILTER_32_BIT: '32_bit',
+  BINARY_FUSE_FILTER_8_BIT: 'b8_bit',
+  BINARY_FUSE_FILTER_16_BIT: 'b16_bit',
+  BINARY_FUSE_FILTER_32_BIT: 'b32_bit',
 }
 
 const _BINARY_FUSE_FILTER_TYPE_FROM_JSON: Record<string, BinaryFuseFilterType> = /*#__PURE__*/ {
-  '8_bit': 'BINARY_FUSE_FILTER_8_BIT',
-  '16_bit': 'BINARY_FUSE_FILTER_16_BIT',
-  '32_bit': 'BINARY_FUSE_FILTER_32_BIT',
+  'b8_bit': 'BINARY_FUSE_FILTER_8_BIT',
+  'b16_bit': 'BINARY_FUSE_FILTER_16_BIT',
+  'b32_bit': 'BINARY_FUSE_FILTER_32_BIT',
 }
 
 export function toJsonBinaryFuseFilterType(v: BinaryFuseFilterType): string {

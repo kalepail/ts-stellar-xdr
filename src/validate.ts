@@ -6,7 +6,8 @@
  * Soroban contract value semantics.
  */
 
-import type { SCVal, SCMap } from './generated/contract.js'
+import type { SCVal, SCMap, SCMapEntry } from './generated/contract.js'
+import { encodeSCVal } from './generated/contract.js'
 
 // ---------------------------------------------------------------------------
 // Errors
@@ -124,6 +125,17 @@ export function validateScMap(map: SCMap): void {
   }
 }
 
+/**
+ * Build a sorted SCMap from arbitrary entries.
+ *
+ * Soroban requires map keys to be strictly sorted. This helper sorts entries by
+ * `compareScVal(entry.key)` so the resulting map is valid for encoding and
+ * contract execution.
+ */
+export function buildSortedScMap(entries: Iterable<SCMapEntry>): SCMap {
+  return Array.from(entries).sort((a, b) => compareScVal(a.key, b.key))
+}
+
 // ---------------------------------------------------------------------------
 // ScVal comparison (for map key ordering)
 // ---------------------------------------------------------------------------
@@ -196,11 +208,9 @@ export function compareScVal(a: SCVal, b: SCVal): number {
       return compareBytes(a.bytes, (b as typeof a).bytes)
     default:
       // For complex types (Error, U128, I128, U256, I256, Vec, Map, Address,
-      // ContractInstance, LedgerKeyNonce), fall back to comparing their XDR
-      // encoding. This is the same approach as the Rust derived Ord.
-      // For simplicity, we return 0 for now — full deep comparison is
-      // complex and rarely needed for map key ordering validation.
-      return 0
+      // ContractInstance, LedgerKeyNonce), compare canonical XDR encodings.
+      // This provides deterministic total ordering for map key sorting.
+      return compareBytes(encodeSCVal(a), encodeSCVal(b as typeof a))
   }
 }
 

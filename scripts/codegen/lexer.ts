@@ -108,7 +108,7 @@ export function tokenize(source: string, filename = '<unknown>'): Token[] {
       // Clean up block comment: remove leading/trailing whitespace,
       // remove leading * on each line (common in multi-line block comments)
       const lines = comment.split('\n').map(l => {
-        let trimmed = l.replace(/^\s*\*?\s?/, '')
+        const trimmed = l.replace(/^\s*\*?\s?/, '')
         return trimmed
       }).filter((l, idx, arr) => {
         // Remove empty first and last lines

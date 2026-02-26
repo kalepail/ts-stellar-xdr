@@ -210,8 +210,14 @@ export function computeEnumPrefix(members: string[]): string {
  * Convert an enum member name to its JSON name by stripping the common prefix
  * and lowercasing. Matches rs-stellar-xdr serde(rename_all = "snake_case") behavior.
  */
-function enumMemberJsonName(memberName: string, prefix: string): string {
-  return memberName.slice(prefix.length).toLowerCase()
+export function enumMemberJsonName(memberName: string, prefix: string): string {
+  let short = memberName.slice(prefix.length)
+  // Match xdrgen `name_short`: if stripping leaves a leading digit, prepend
+  // the first prefix character so downstream identifiers remain valid.
+  if (short.length > 0 && /^\d/.test(short) && prefix.length > 0) {
+    short = `${prefix[0]!}${short}`
+  }
+  return short.toLowerCase()
 }
 
 /**
