@@ -1,0 +1,85 @@
+{
+  "name": "ts-stellar-xdr",
+  "version": "0.1.0",
+  "description": "Modern, tree-shakable XDR codec for the Stellar network",
+  "type": "module",
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "packageManager": "bun@1.3.8",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./codec": {
+      "import": "./dist/codec.js",
+      "types": "./dist/codec.d.ts"
+    },
+    "./strkey": {
+      "import": "./dist/strkey.js",
+      "types": "./dist/strkey.d.ts"
+    },
+    "./hashing": {
+      "import": "./dist/hashing.js",
+      "types": "./dist/hashing.d.ts"
+    },
+    "./validate": {
+      "import": "./dist/validate.js",
+      "types": "./dist/validate.d.ts"
+    },
+    "./json": {
+      "import": "./dist/json.js",
+      "types": "./dist/json.d.ts"
+    },
+    "./transaction": {
+      "import": "./dist/generated/transaction.js",
+      "types": "./dist/generated/transaction.d.ts"
+    },
+    "./contract": {
+      "import": "./dist/generated/contract.js",
+      "types": "./dist/generated/contract.d.ts"
+    },
+    "./ledger-entries": {
+      "import": "./dist/generated/ledger-entries.js",
+      "types": "./dist/generated/ledger-entries.d.ts"
+    },
+    "./scp": {
+      "import": "./dist/generated/scp.js",
+      "types": "./dist/generated/scp.d.ts"
+    },
+    "./overlay": {
+      "import": "./dist/generated/overlay.js",
+      "types": "./dist/generated/overlay.d.ts"
+    },
+    "./helpers": {
+      "import": "./dist/helpers.js",
+      "types": "./dist/helpers.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint src scripts tests",
+    "lint:fix": "oxlint --fix src scripts tests",
+    "fmt": "oxfmt .",
+    "fmt:check": "oxfmt --check .",
+    "codegen": "bun scripts/codegen/index.ts",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "oxfmt": "latest",
+    "oxlint": "latest",
+    "tsdown": "latest",
+    "typescript": "latest",
+    "vite": "latest",
+    "vitest": "latest"
+  }
+}
