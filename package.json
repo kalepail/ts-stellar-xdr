@@ -31,6 +31,14 @@
       "import": "./dist/json.js",
       "types": "./dist/json.d.ts"
     },
+    "./types": {
+      "import": "./dist/generated/types.js",
+      "types": "./dist/generated/types.d.ts"
+    },
+    "./asset": {
+      "import": "./dist/generated/asset.js",
+      "types": "./dist/generated/asset.d.ts"
+    },
     "./transaction": {
       "import": "./dist/generated/transaction.js",
       "types": "./dist/generated/transaction.d.ts"
@@ -39,9 +47,29 @@
       "import": "./dist/generated/contract.js",
       "types": "./dist/generated/contract.d.ts"
     },
+    "./contract-spec": {
+      "import": "./dist/generated/contract-spec.js",
+      "types": "./dist/generated/contract-spec.d.ts"
+    },
+    "./contract-env-meta": {
+      "import": "./dist/generated/contract-env-meta.js",
+      "types": "./dist/generated/contract-env-meta.d.ts"
+    },
+    "./contract-meta": {
+      "import": "./dist/generated/contract-meta.js",
+      "types": "./dist/generated/contract-meta.d.ts"
+    },
+    "./contract-config-setting": {
+      "import": "./dist/generated/contract-config-setting.js",
+      "types": "./dist/generated/contract-config-setting.d.ts"
+    },
     "./ledger-entries": {
       "import": "./dist/generated/ledger-entries.js",
       "types": "./dist/generated/ledger-entries.d.ts"
+    },
+    "./ledger": {
+      "import": "./dist/generated/ledger.js",
+      "types": "./dist/generated/ledger.d.ts"
     },
     "./scp": {
       "import": "./dist/generated/scp.js",
@@ -50,6 +78,18 @@
     "./overlay": {
       "import": "./dist/generated/overlay.js",
       "types": "./dist/generated/overlay.d.ts"
+    },
+    "./internal": {
+      "import": "./dist/generated/internal.js",
+      "types": "./dist/generated/internal.d.ts"
+    },
+    "./exporter": {
+      "import": "./dist/generated/exporter.js",
+      "types": "./dist/generated/exporter.d.ts"
+    },
+    "./introspection": {
+      "import": "./dist/generated/introspection.js",
+      "types": "./dist/generated/introspection.d.ts"
     },
     "./helpers": {
       "import": "./dist/helpers.js",
@@ -69,7 +109,7 @@
     "src"
   ],
   "scripts": {
-    "build": "tsdown",
+    "build": "tsdown && node scripts/verify-exports.mjs",
     "dev": "tsdown --watch",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -79,10 +119,14 @@
     "fmt": "oxfmt .",
     "fmt:check": "oxfmt --check .",
     "codegen": "bun scripts/codegen/index.ts",
+    "sync:schemas": "node scripts/sync-xdr-json-schemas.mjs",
+    "verify:exports": "node scripts/verify-exports.mjs",
     "clean": "rm -rf dist"
   },
   "devDependencies": {
+    "@stellar/stellar-base": "^14.0.4",
     "@types/bun": "latest",
+    "ajv": "^8.18.0",
     "oxfmt": "latest",
     "oxlint": "latest",
     "tsdown": "latest",

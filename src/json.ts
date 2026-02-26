@@ -8,6 +8,24 @@
  */
 
 const MASK64 = 0xFFFFFFFFFFFFFFFFn
+const MIN_I128 = -(1n << 127n)
+const MAX_I128 = (1n << 127n) - 1n
+const MAX_U128 = (1n << 128n) - 1n
+const MIN_I256 = -(1n << 255n)
+const MAX_I256 = (1n << 255n) - 1n
+const MAX_U256 = (1n << 256n) - 1n
+const MIN_I64 = -(1n << 63n)
+const MAX_I64 = (1n << 63n) - 1n
+const MAX_U64 = (1n << 64n) - 1n
+const MIN_I32 = -0x80000000
+const MAX_I32 = 0x7FFFFFFF
+const MAX_U32 = 0xFFFFFFFF
+
+function assertRange(name: string, value: bigint, min: bigint, max: bigint): void {
+  if (value < min || value > max) {
+    throw new RangeError(`${name} out of range: ${value} not in [${min}, ${max}]`)
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Int128Parts ↔ decimal string
@@ -19,6 +37,7 @@ export function int128PartsToDecimal(hi: bigint, lo: bigint): string {
 
 export function decimalToInt128Parts(s: string | number): [hi: bigint, lo: bigint] {
   const v = BigInt(s)
+  assertRange('Int128Parts', v, MIN_I128, MAX_I128)
   const lo = v & MASK64
   let hi = (v >> 64n) & MASK64
   // Sign-extend hi to int64 range
@@ -36,6 +55,7 @@ export function uint128PartsToDecimal(hi: bigint, lo: bigint): string {
 
 export function decimalToUint128Parts(s: string | number): [hi: bigint, lo: bigint] {
   const v = BigInt(s)
+  assertRange('UInt128Parts', v, 0n, MAX_U128)
   return [(v >> 64n) & MASK64, v & MASK64]
 }
 
@@ -58,6 +78,7 @@ export function decimalToInt256Parts(
   s: string | number,
 ): [hiHi: bigint, hiLo: bigint, loHi: bigint, loLo: bigint] {
   const v = BigInt(s)
+  assertRange('Int256Parts', v, MIN_I256, MAX_I256)
   const loLo = v & MASK64
   const loHi = (v >> 64n) & MASK64
   const hiLo = (v >> 128n) & MASK64
@@ -80,6 +101,7 @@ export function decimalToUint256Parts(
   s: string | number,
 ): [hiHi: bigint, hiLo: bigint, loHi: bigint, loLo: bigint] {
   const v = BigInt(s)
+  assertRange('UInt256Parts', v, 0n, MAX_U256)
   return [
     (v >> 192n) & MASK64,
     (v >> 128n) & MASK64,
@@ -130,35 +152,64 @@ function escapeBytesToAscii(bytes: Uint8Array): string {
 /**
  * Parse SEP-0051 escape sequences back to raw bytes.
  */
+function hexValue(byte: number): number {
+  if (byte >= 0x30 && byte <= 0x39) return byte - 0x30 // 0-9
+  if (byte >= 0x41 && byte <= 0x46) return byte - 0x41 + 10 // A-F
+  if (byte >= 0x61 && byte <= 0x66) return byte - 0x61 + 10 // a-f
+  return -1
+}
+
 function unescapeAsciiToBytes(s: string): Uint8Array {
+  // Parse escapes over UTF-8 bytes so literal non-ASCII input remains byte-accurate.
+  const source = _encoder.encode(s)
   const bytes: number[] = []
-  let i = 0
-  while (i < s.length) {
-    if (s[i] === '\\' && i + 1 < s.length) {
-      switch (s[i + 1]) {
-        case '0': bytes.push(0x00); i += 2; break
-        case 't': bytes.push(0x09); i += 2; break
-        case 'n': bytes.push(0x0A); i += 2; break
-        case 'r': bytes.push(0x0D); i += 2; break
-        case '\\': bytes.push(0x5C); i += 2; break
-        case 'x':
-          if (i + 3 < s.length) {
-            bytes.push(parseInt(s.substring(i + 2, i + 4), 16))
-            i += 4
-          } else {
-            bytes.push(s.charCodeAt(i))
-            i++
-          }
-          break
-        default:
-          bytes.push(0x5C)
-          i++
+
+  for (let i = 0; i < source.length; i++) {
+    const b = source[i]!
+
+    if (b !== 0x5C) {
+      bytes.push(b)
+      continue
+    }
+
+    if (i + 1 >= source.length) {
+      throw new Error('Invalid escape sequence: trailing backslash')
+    }
+
+    const next = source[++i]!
+    switch (next) {
+      case 0x30: // 0
+        bytes.push(0x00)
+        break
+      case 0x74: // t
+        bytes.push(0x09)
+        break
+      case 0x6E: // n
+        bytes.push(0x0A)
+        break
+      case 0x72: // r
+        bytes.push(0x0D)
+        break
+      case 0x5C: // \
+        bytes.push(0x5C)
+        break
+      case 0x78: { // x
+        if (i + 2 >= source.length) {
+          throw new Error('Invalid \\x escape sequence: expected two hex digits')
+        }
+        const hi = hexValue(source[++i]!)
+        const lo = hexValue(source[++i]!)
+        if (hi === -1 || lo === -1) {
+          throw new Error('Invalid \\x escape sequence: expected hex digits')
+        }
+        bytes.push((hi << 4) | lo)
+        break
       }
-    } else {
-      bytes.push(s.charCodeAt(i))
-      i++
+      default:
+        throw new Error(`Invalid escape sequence: \\${String.fromCharCode(next)}`)
     }
   }
+
   return new Uint8Array(bytes)
 }
 
@@ -216,6 +267,9 @@ export function escapeAssetCode12(bytes: Uint8Array): string {
  */
 export function unescapeAssetCode(s: string, len: number): Uint8Array {
   const raw = unescapeAsciiToBytes(s)
+  if (raw.length > len) {
+    throw new RangeError(`Decoded asset code is ${raw.length} bytes, max is ${len}`)
+  }
   const result = new Uint8Array(len)
   result.set(raw)
   return result
@@ -226,31 +280,175 @@ export function unescapeAssetCode(s: string, len: number): Uint8Array {
  * Used to discriminate between AssetCode4 (≤4 bytes) and AssetCode12 (≥5 bytes).
  */
 export function assetCodeByteLength(s: string): number {
-  let count = 0
-  let i = 0
-  while (i < s.length) {
-    count++
-    if (s[i] === '\\' && i + 1 < s.length) {
-      if (s[i + 1] === 'x') { i += 4 }
-      else { i += 2 }
-    } else {
-      i++
-    }
-  }
-  return count
+  return unescapeAsciiToBytes(s).length
 }
 
 // ---------------------------------------------------------------------------
 // Union discriminant key extraction (SEP-0051 §JSON Schema)
 // ---------------------------------------------------------------------------
 
+function jsonTypeOf(value: unknown): string {
+  if (value === null) return 'null'
+  if (Array.isArray(value)) return 'array'
+  return typeof value
+}
+
+export function parseJsonObject(json: unknown): Record<string, unknown> {
+  if (json == null || typeof json !== 'object' || Array.isArray(json)) {
+    throw new Error(`Expected JSON object, got ${jsonTypeOf(json)}`)
+  }
+  return json as Record<string, unknown>
+}
+
+export function parseJsonArray(json: unknown): unknown[] {
+  if (!Array.isArray(json)) {
+    throw new Error(`Expected JSON array, got ${jsonTypeOf(json)}`)
+  }
+  return json
+}
+
+export function parseJsonFixedArray(json: unknown, len: number): unknown[] {
+  const arr = parseJsonArray(json)
+  if (arr.length !== len) {
+    throw new Error(`Expected JSON array length ${len}, got ${arr.length}`)
+  }
+  return arr
+}
+
+export function parseJsonVarArray(json: unknown, maxLen: number): unknown[] {
+  const arr = parseJsonArray(json)
+  if (arr.length > maxLen) {
+    throw new Error(`Expected JSON array length <= ${maxLen}, got ${arr.length}`)
+  }
+  return arr
+}
+
+export function parseJsonString(json: unknown): string {
+  if (typeof json !== 'string') {
+    throw new Error(`Expected JSON string, got ${jsonTypeOf(json)}`)
+  }
+  return json
+}
+
+export function parseJsonBool(json: unknown): boolean {
+  if (typeof json !== 'boolean') {
+    throw new Error(`Expected JSON boolean, got ${jsonTypeOf(json)}`)
+  }
+  return json
+}
+
+function parseJsonNumber(json: unknown): number {
+  if (typeof json !== 'number' || !Number.isFinite(json)) {
+    throw new Error(`Expected finite JSON number, got ${jsonTypeOf(json)}`)
+  }
+  return json
+}
+
+export function parseJsonInt32(json: unknown): number {
+  const n = parseJsonNumber(json)
+  if (!Number.isInteger(n) || n < MIN_I32 || n > MAX_I32) {
+    throw new Error(`Expected int32 JSON number, got ${n}`)
+  }
+  return n
+}
+
+export function parseJsonUint32(json: unknown): number {
+  const n = parseJsonNumber(json)
+  if (!Number.isInteger(n) || n < 0 || n > MAX_U32) {
+    throw new Error(`Expected uint32 JSON number, got ${n}`)
+  }
+  return n
+}
+
+export function parseJsonFloat(json: unknown): number {
+  return parseJsonNumber(json)
+}
+
+export function parseJsonDouble(json: unknown): number {
+  return parseJsonNumber(json)
+}
+
+function parseJsonBigInt(json: unknown): bigint {
+  if (typeof json === 'string') {
+    if (!/^-?\d+$/.test(json)) {
+      throw new Error(`Expected integer JSON string, got ${JSON.stringify(json)}`)
+    }
+    return BigInt(json)
+  }
+  if (typeof json === 'number') {
+    if (!Number.isSafeInteger(json)) {
+      throw new Error(`Expected safe integer JSON number, got ${json}`)
+    }
+    return BigInt(json)
+  }
+  throw new Error(`Expected integer JSON string/number, got ${jsonTypeOf(json)}`)
+}
+
+export function parseJsonInt64(json: unknown): bigint {
+  const v = parseJsonBigInt(json)
+  if (v < MIN_I64 || v > MAX_I64) {
+    throw new Error(`Expected int64 JSON value, got ${v}`)
+  }
+  return v
+}
+
+export function parseJsonUint64(json: unknown): bigint {
+  const v = parseJsonBigInt(json)
+  if (v < 0n || v > MAX_U64) {
+    throw new Error(`Expected uint64 JSON value, got ${v}`)
+  }
+  return v
+}
+
+export function parseJsonHexBytes(json: unknown): Uint8Array {
+  const hex = parseJsonString(json)
+  if (hex.length % 2 !== 0) {
+    throw new Error(`Expected even-length hex string, got length ${hex.length}`)
+  }
+  const bytes = new Uint8Array(hex.length / 2)
+  for (let i = 0; i < hex.length; i += 2) {
+    const hi = hexValue(hex.charCodeAt(i))
+    const lo = hexValue(hex.charCodeAt(i + 1))
+    if (hi === -1 || lo === -1) {
+      throw new Error('Expected hex string containing only [0-9a-fA-F]')
+    }
+    bytes[i / 2] = (hi << 4) | lo
+  }
+  return bytes
+}
+
+export function parseJsonFixedHexBytes(json: unknown, len: number): Uint8Array {
+  const bytes = parseJsonHexBytes(json)
+  if (bytes.length !== len) {
+    throw new Error(`Expected ${len} bytes (hex), got ${bytes.length}`)
+  }
+  return bytes
+}
+
+export function parseJsonVarHexBytes(json: unknown, maxLen: number): Uint8Array {
+  const bytes = parseJsonHexBytes(json)
+  if (bytes.length > maxLen) {
+    throw new Error(`Expected at most ${maxLen} bytes (hex), got ${bytes.length}`)
+  }
+  return bytes
+}
+
+export function parseJsonXdrString(json: unknown): string {
+  return unescapeXdrString(parseJsonString(json))
+}
+
 /**
  * Extract the discriminant key from a union JSON object, skipping the
  * optional `$schema` property defined in SEP-0051 §JSON Schema.
  */
-export function unionKey(obj: Record<string, unknown>): string {
-  for (const k of Object.keys(obj)) {
-    if (k !== '$schema') return k
+export function unionKey(obj: unknown): string {
+  const o = parseJsonObject(obj)
+  const keys = Object.keys(o).filter((k) => k !== '$schema')
+  if (keys.length === 1) {
+    return keys[0]!
   }
-  throw new Error('No discriminant key found in union object')
+  if (keys.length === 0) {
+    throw new Error('No discriminant key found in union object')
+  }
+  throw new Error(`Expected exactly one discriminant key, found ${keys.length}`)
 }
