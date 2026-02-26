@@ -83,6 +83,9 @@ describe('JSON Schema conformance (rs-stellar-xdr xdr-json/curr)', () => {
     const json = toJsonTransactionEnvelope(env)
     const roundtrip = fromJsonTransactionEnvelope(json)
     expect(roundtrip.type).toBe('ENVELOPE_TYPE_TX')
+    if (roundtrip.type !== 'ENVELOPE_TYPE_TX') {
+      throw new Error('Expected ENVELOPE_TYPE_TX envelope')
+    }
     expect(roundtrip.v1.tx.operations.length).toBeGreaterThan(0)
   })
 

@@ -6,7 +6,7 @@ import {
   compareScVal,
   ScValValidationError,
 } from '../src/validate.ts'
-import type { SCVal, SCMap } from '../src/generated/contract.ts'
+import type { SCVal, SCMap, SCMapEntry } from '../src/generated/contract.ts'
 
 describe('validateScVal', () => {
   describe('always-valid variants', () => {
@@ -337,7 +337,7 @@ describe('buildSortedScMap', () => {
   })
 
   it('accepts any iterable input', () => {
-    const iterable = new Set([
+    const iterable = new Set<SCMapEntry>([
       { key: { type: 'SCV_U32', u32: 3 }, val: { type: 'SCV_VOID' } },
       { key: { type: 'SCV_U32', u32: 1 }, val: { type: 'SCV_VOID' } },
     ])

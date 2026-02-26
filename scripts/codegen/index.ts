@@ -171,7 +171,7 @@ export function resolveCodegenOptions(
 
 async function readSourceLock(): Promise<SourceLock> {
   if (typeof Bun !== 'undefined' && Bun.file) {
-    return Bun.file(SOURCE_LOCK_PATH).json<SourceLock>()
+    return Bun.file(SOURCE_LOCK_PATH).json() as Promise<SourceLock>
   }
   const { readFile } = await import('node:fs/promises')
   const raw = await readFile(SOURCE_LOCK_PATH, 'utf8')
@@ -521,12 +521,10 @@ function generateIntrospectionMetadata(
 
   const unionEntries = unionDefs.map((def) => {
     const discriminantType = typeRefToString(def.discriminant.type)
+    const discriminantNamed = def.discriminant.type.kind === 'named' ? def.discriminant.type : null
     const isEnumDiscriminant =
-      def.discriminant.type.kind === 'named' &&
-      kindRegistry.get(def.discriminant.type.name) === 'enum'
-    const enumPrefix = isEnumDiscriminant
-      ? (enumPrefixMap.get(def.discriminant.type.name) ?? '')
-      : ''
+      discriminantNamed !== null && kindRegistry.get(discriminantNamed.name) === 'enum'
+    const enumPrefix = isEnumDiscriminant ? (enumPrefixMap.get(discriminantNamed.name) ?? '') : ''
 
     const arms = def.arms.map((arm) => {
       const cases: UnionIntrospectionCase[] = arm.cases.map((caseValue) => ({

@@ -42,7 +42,10 @@ describe('nativeToScVal', () => {
   it('converts arrays with per-index type hints', () => {
     const scv = nativeToScVal([1, 'a', false, 'tail'], { type: ['i128', 'symbol'] })
     expect(scv.type).toBe('SCV_VEC')
-    expect(scv.vec?.map((v) => v.type)).toEqual([
+    if (scv.type !== 'SCV_VEC') {
+      throw new Error('Expected SCV_VEC')
+    }
+    expect(scv.vec?.map((v: SCVal) => v.type)).toEqual([
       'SCV_I128',
       'SCV_SYMBOL',
       'SCV_BOOL',
@@ -61,10 +64,15 @@ describe('nativeToScVal', () => {
     )
 
     expect(scv.type).toBe('SCV_MAP')
+    if (scv.type !== 'SCV_MAP') {
+      throw new Error('Expected SCV_MAP')
+    }
     const keys = scv.map?.map((entry) => entry.key.type)
     expect(keys).toEqual(['SCV_STRING', 'SCV_STRING', 'SCV_SYMBOL'])
 
-    const symbolEntry = scv.map?.find((entry) => entry.key.type === 'SCV_SYMBOL')
+    const symbolEntry = scv.map?.find(
+      (entry: { key: SCVal; val: SCVal }) => entry.key.type === 'SCV_SYMBOL',
+    )
     expect(symbolEntry?.val.type).toBe('SCV_I64')
   })
 

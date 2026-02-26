@@ -54,7 +54,14 @@ const CONFORMANCE_VECTORS: ConformanceVector[] = [
 const INVALID_UTF8_VECTOR_5 =
   'AAAAAAtjwtJadppTmm0NtAU99BFxXXfzPO1N/SqR43Z8aXqXAAAAZAAIj6YAAAACAAAAAAAAAAEAAAAB0QAAAAAAAAEAAAAAAAAAAQAAAADLa6390PDAqg3qDLpshQxS+uVw3ytSgKRirQcInPWt1QAAAAAAAAAAA1Z+AAAAAAAAAAABfGl6lwAAAEBC655+8Izq54MIZrXTVF/E1ycHgQWpVcBD+LFkuOjjJd995u/7wM8sFqQqambL0/ME2FTOtxMO65B9i3eAIu4P'
 
-const ENVELOPE_TYPE_TO_BASE_SWITCH: Record<TransactionEnvelope['type'], string> = {
+type EnvelopeTypeForConformance =
+  | TransactionEnvelope['type']
+  | 'ENVELOPE_TYPE_OP_ID'
+  | 'ENVELOPE_TYPE_POOL_REVOKE_OP_ID'
+  | 'ENVELOPE_TYPE_CONTRACT_ID'
+  | 'ENVELOPE_TYPE_SOROBAN_AUTHORIZATION'
+
+const ENVELOPE_TYPE_TO_BASE_SWITCH: Record<EnvelopeTypeForConformance, string> = {
   ENVELOPE_TYPE_TX_V0: 'envelopeTypeTxV0',
   ENVELOPE_TYPE_TX: 'envelopeTypeTx',
   ENVELOPE_TYPE_TX_FEE_BUMP: 'envelopeTypeTxFeeBump',
@@ -98,7 +105,7 @@ function summarizeOurEnvelope(env: TransactionEnvelope): EnvelopeSummary {
     case 'ENVELOPE_TYPE_TX_FEE_BUMP': {
       const inner = env.feeBump.tx.innerTx
       if (inner.type !== 'ENVELOPE_TYPE_TX') {
-        throw new Error(`Unsupported inner tx type in fee bump envelope: ${inner.type}`)
+        throw new Error('Unsupported inner tx type in fee bump envelope')
       }
       return {
         operationCount: inner.v1.tx.operations.length,
@@ -107,9 +114,10 @@ function summarizeOurEnvelope(env: TransactionEnvelope): EnvelopeSummary {
         memoSwitch: MEMO_TYPE_TO_BASE_SWITCH[inner.v1.tx.memo.type],
       }
     }
-    default:
-      throw new Error(`Unsupported envelope type for summary: ${env.type}`)
   }
+
+  const _never: never = env
+  throw new Error(`Unsupported envelope type for summary: ${String(_never)}`)
 }
 
 function summarizeBaseEnvelope(baseEnv: any): EnvelopeSummary {
