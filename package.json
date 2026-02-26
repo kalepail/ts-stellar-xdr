@@ -119,6 +119,7 @@
     "fmt": "oxfmt .",
     "fmt:check": "oxfmt --check .",
     "codegen": "bun scripts/codegen/index.ts",
+    "codegen:next": "bun scripts/codegen/index.ts --channel next",
     "sync:schemas": "node scripts/sync-xdr-json-schemas.mjs",
     "verify:exports": "node scripts/verify-exports.mjs",
     "clean": "rm -rf dist"

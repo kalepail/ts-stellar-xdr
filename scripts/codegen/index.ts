@@ -1,11 +1,16 @@
 /**
  * XDR code generator CLI
- * Usage: bun scripts/codegen/index.ts [--ref <git-ref>]
+ *
+ * Deterministic defaults:
+ * - Uses a pinned source lock (scripts/codegen/source-lock.json)
+ * - Generates from a specific ref (tag/branch/commit)
+ * - Emits metadata describing channel/ref/files used
  *
  * Fetches Stellar XDR .x files from stellar/stellar-xdr and generates
- * TypeScript types + codec functions in src/generated/.
+ * TypeScript types + codec functions in src/generated/ (or a custom output dir).
  */
 
+import { mkdir } from 'node:fs/promises'
 import { tokenize } from './lexer.js'
 import { parse } from './parser.js'
 import {
@@ -18,8 +23,25 @@ import {
 } from './generator.js'
 import type { XdrDefinition, XdrFile, XdrTypeRef } from './ast.js'
 
+export type CodegenChannel = 'curr' | 'next'
+
+export interface SourceLockChannel {
+  ref: string
+  commit: string
+  released_at: string
+}
+
+export interface SourceLock {
+  stellar_xdr: Record<CodegenChannel, SourceLockChannel>
+}
+
 const STELLAR_XDR_BASE_PREFIX = 'https://raw.githubusercontent.com/stellar/stellar-xdr'
-const DEFAULT_REF = 'curr'
+const SOURCE_LOCK_PATH = new URL('./source-lock.json', import.meta.url)
+const DEFAULT_CHANNEL: CodegenChannel = 'curr'
+const DEFAULT_OUT_DIR_BY_CHANNEL: Record<CodegenChannel, string> = {
+  curr: 'src/generated',
+  next: 'src/generated-next',
+}
 
 const XDR_FILES = [
   'Stellar-types.x',
@@ -53,21 +75,41 @@ const FILE_MAP: Record<string, string> = {
   'Stellar-exporter.x': 'exporter.ts',
 }
 
-const OUT_DIR = 'src/generated'
-
 export interface CodegenCliArgs {
+  channel: CodegenChannel
+  ref?: string
+  outDir?: string
+  help?: boolean
+}
+
+export interface ResolvedCodegenOptions {
+  channel: CodegenChannel
   ref: string
+  outDir: string
+  lockedCommit: string
+  sourceDescriptor: string
 }
 
 export function parseCodegenCliArgs(argv: readonly string[]): CodegenCliArgs {
-  let ref = DEFAULT_REF
+  let channel = DEFAULT_CHANNEL
+  let ref: string | undefined
+  let outDir: string | undefined
   for (let i = 2; i < argv.length; i++) {
     const arg = argv[i]!
+    if (arg === '--channel') {
+      const value = readFlagValue('--channel', argv, i)
+      channel = parseChannel(value)
+      i++
+      continue
+    }
+    if (arg.startsWith('--channel=')) {
+      const value = arg.slice('--channel='.length)
+      if (!value) throw new Error('Missing value for --channel')
+      channel = parseChannel(value)
+      continue
+    }
     if (arg === '--ref') {
-      const value = argv[i + 1]
-      if (value === undefined || value.startsWith('-')) {
-        throw new Error('Missing value for --ref')
-      }
+      const value = readFlagValue('--ref', argv, i)
       ref = value
       i++
       continue
@@ -78,17 +120,60 @@ export function parseCodegenCliArgs(argv: readonly string[]): CodegenCliArgs {
       ref = value
       continue
     }
+    if (arg === '--out-dir') {
+      const value = readFlagValue('--out-dir', argv, i)
+      outDir = value
+      i++
+      continue
+    }
+    if (arg.startsWith('--out-dir=')) {
+      const value = arg.slice('--out-dir='.length)
+      if (!value) throw new Error('Missing value for --out-dir')
+      outDir = value
+      continue
+    }
     if (arg === '--help' || arg === '-h') {
       printUsage()
-      return { ref }
+      return { channel, ref, outDir, help: true }
     }
     throw new Error(`Unknown argument: ${arg}`)
   }
-  return { ref }
+  return { channel, ref, outDir }
 }
 
 export function getStellarXdrBase(ref: string): string {
   return `${STELLAR_XDR_BASE_PREFIX}/${ref}`
+}
+
+export function resolveCodegenOptions(cli: CodegenCliArgs, sourceLock: SourceLock): ResolvedCodegenOptions {
+  const lockForChannel = sourceLock.stellar_xdr[cli.channel]
+  if (!lockForChannel) {
+    throw new Error(`No source lock configured for channel: ${cli.channel}`)
+  }
+
+  const ref = cli.ref ?? lockForChannel.ref
+  const outDir = cli.outDir ?? DEFAULT_OUT_DIR_BY_CHANNEL[cli.channel]
+  const lockedCommit = lockForChannel.commit && ref === lockForChannel.ref
+    ? lockForChannel.commit
+    : ''
+  const sourceDescriptor = `https://github.com/stellar/stellar-xdr (channel=${cli.channel}, ref=${ref}${lockedCommit ? `, commit=${lockedCommit}` : ''})`
+
+  return {
+    channel: cli.channel,
+    ref,
+    outDir,
+    lockedCommit,
+    sourceDescriptor,
+  }
+}
+
+async function readSourceLock(): Promise<SourceLock> {
+  if (typeof Bun !== 'undefined' && Bun.file) {
+    return Bun.file(SOURCE_LOCK_PATH).json<SourceLock>()
+  }
+  const { readFile } = await import('node:fs/promises')
+  const raw = await readFile(SOURCE_LOCK_PATH, 'utf8')
+  return JSON.parse(raw) as SourceLock
 }
 
 async function fetchXdrFile(stellarXdrBase: string, filename: string): Promise<string> {
@@ -103,10 +188,18 @@ async function fetchXdrFile(stellarXdrBase: string, filename: string): Promise<s
 
 async function main() {
   const argv = typeof Bun !== 'undefined' ? Bun.argv : process.argv
-  const { ref } = parseCodegenCliArgs(argv)
+  const cli = parseCodegenCliArgs(argv)
+  if (cli.help) {
+    return
+  }
+  const sourceLock = await readSourceLock()
+  const { channel, ref, outDir, lockedCommit, sourceDescriptor } = resolveCodegenOptions(cli, sourceLock)
   const stellarXdrBase = getStellarXdrBase(ref)
 
-  console.log(`Fetching Stellar XDR definitions from stellar/stellar-xdr (${ref})...\n`)
+  console.log(`Generating Stellar XDR TypeScript from ${sourceDescriptor}\n`)
+  console.log(`Output directory: ${outDir}\n`)
+
+  await mkdir(outDir, { recursive: true })
 
   const parsed: Array<{ filename: string; ast: XdrFile }> = []
 
@@ -230,7 +323,7 @@ async function main() {
     const outputFile = FILE_MAP[filename]!
     const output = generateTypeScript(ast.definitions, outputFile, typeRegistry, outputFile)
 
-    const outPath = `${OUT_DIR}/${outputFile}`
+    const outPath = `${outDir}/${outputFile}`
     await Bun.write(outPath, output.content)
 
     const lineCount = output.content.split('\n').length
@@ -248,8 +341,8 @@ async function main() {
     enumPrefixMap,
     ref,
   )
-  await Bun.write(`${OUT_DIR}/introspection.ts`, introspectionContent)
-  console.log(`  Wrote ${OUT_DIR}/introspection.ts`)
+  await Bun.write(`${outDir}/introspection.ts`, introspectionContent)
+  console.log(`  Wrote ${outDir}/introspection.ts`)
   generatedFiles.push('introspection.ts')
 
   // ---------------------------------------------------------------------------
@@ -258,6 +351,8 @@ async function main() {
   const indexLines: string[] = [
     '// AUTO-GENERATED — do not edit manually',
     '// Run: bun scripts/codegen/index.ts',
+    `// Channel: ${channel}`,
+    `// Ref: ${ref}`,
     '',
   ]
   for (const file of generatedFiles) {
@@ -267,8 +362,21 @@ async function main() {
   indexLines.push('')
 
   const indexContent = indexLines.join('\n')
-  await Bun.write(`${OUT_DIR}/index.ts`, indexContent)
-  console.log(`  Wrote ${OUT_DIR}/index.ts`)
+  await Bun.write(`${outDir}/index.ts`, indexContent)
+  console.log(`  Wrote ${outDir}/index.ts`)
+
+  const metadata = {
+    generated_at: new Date().toISOString(),
+    channel,
+    ref,
+    commit: lockedCommit,
+    source_descriptor: sourceDescriptor,
+    xdr_files: [...XDR_FILES],
+    output_dir: outDir,
+    generated_files: generatedFiles,
+  }
+  await Bun.write(`${outDir}/.codegen-meta.json`, JSON.stringify(metadata, null, 2) + '\n')
+  console.log(`  Wrote ${outDir}/.codegen-meta.json`)
 
   console.log('\nDone!')
 }
@@ -281,8 +389,34 @@ if (import.meta.main) {
 }
 
 function printUsage(): void {
-  console.log('Usage: bun scripts/codegen/index.ts [--ref <git-ref>]')
-  console.log('Example: bun scripts/codegen/index.ts --ref next')
+  console.log('Usage: bun scripts/codegen/index.ts [options]')
+  console.log('')
+  console.log('Options:')
+  console.log('  --channel <curr|next>   Select source channel (default: curr)')
+  console.log('  --ref <tag|branch|sha>  Override locked source ref')
+  console.log('  --out-dir <path>        Output directory')
+  console.log('  --help                  Show this help')
+  console.log('')
+  console.log('Examples:')
+  console.log('  bun scripts/codegen/index.ts')
+  console.log('  bun scripts/codegen/index.ts --channel next')
+  console.log('  bun scripts/codegen/index.ts --channel next --out-dir src/generated-next')
+  console.log('  bun scripts/codegen/index.ts --ref next')
+}
+
+function parseChannel(raw: string): CodegenChannel {
+  if (raw === 'curr' || raw === 'next') {
+    return raw
+  }
+  throw new Error(`Invalid --channel value: ${raw}. Expected curr or next.`)
+}
+
+function readFlagValue(flag: string, argv: readonly string[], index: number): string {
+  const value = argv[index + 1]
+  if (value === undefined || value.startsWith('-')) {
+    throw new Error(`Missing value for ${flag}`)
+  }
+  return value
 }
 
 type EnumIntrospectionMember = {

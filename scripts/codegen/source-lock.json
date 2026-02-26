@@ -1,0 +1,14 @@
+{
+  "stellar_xdr": {
+    "curr": {
+      "ref": "v25.0",
+      "commit": "0a621ec7811db000a60efae5b35f78dee3aa2533",
+      "released_at": "2025-11-26"
+    },
+    "next": {
+      "ref": "next",
+      "commit": "",
+      "released_at": ""
+    }
+  }
+}
