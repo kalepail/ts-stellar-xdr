@@ -13,15 +13,15 @@
 // ---------------------------------------------------------------------------
 
 export const StrKeyVersion = {
-  ed25519PublicKey: 6 << 3,     // 48  → G
-  ed25519SecretSeed: 18 << 3,  // 144 → S
-  muxedAccount: 12 << 3,       // 96  → M
-  preAuthTx: 19 << 3,          // 152 → T
-  sha256Hash: 23 << 3,         // 184 → X
-  signedPayload: 15 << 3,      // 120 → P
-  contract: 2 << 3,            // 16  → C
-  claimableBalance: 1 << 3,    // 8   → B
-  liquidityPool: 11 << 3,      // 88  → L
+  ed25519PublicKey: 6 << 3, // 48  → G
+  ed25519SecretSeed: 18 << 3, // 144 → S
+  muxedAccount: 12 << 3, // 96  → M
+  preAuthTx: 19 << 3, // 152 → T
+  sha256Hash: 23 << 3, // 184 → X
+  signedPayload: 15 << 3, // 120 → P
+  contract: 2 << 3, // 16  → C
+  claimableBalance: 1 << 3, // 8   → B
+  liquidityPool: 11 << 3, // 88  → L
 } as const
 
 export type StrKeyVersionName = keyof typeof StrKeyVersion
@@ -43,11 +43,11 @@ export class StrKeyError extends Error {
 
 /** CRC16-XMODEM lookup table (polynomial 0x1021, init 0x0000). */
 const CRC16_TABLE: readonly number[] = /*#__PURE__*/ (() => {
-  const table = new Array<number>(256)
+  const table = Array.from({ length: 256 }, () => 0)
   for (let i = 0; i < 256; i++) {
     let crc = i << 8
     for (let j = 0; j < 8; j++) {
-      crc = (crc & 0x8000) ? ((crc << 1) ^ 0x1021) : (crc << 1)
+      crc = crc & 0x8000 ? (crc << 1) ^ 0x1021 : crc << 1
       crc &= 0xffff
     }
     table[i] = crc

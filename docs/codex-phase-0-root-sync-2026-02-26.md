@@ -1,11 +1,13 @@
 # Codex Phase 0 Root Sync Review (2026-02-26)
 
 ## Scope
+
 - Root project: `/Users/kalepail/Desktop/ts-stellar-xdr`
 - Codex worktree: `/Users/kalepail/Desktop/ts-stellar-xdr-codex-wt/ts-stellar-xdr`
 - Objective: perform a careful Phase 0 sync, importing high-confidence SEP-0051 and runtime correctness improvements from root while preserving proven worktree upgrades.
 
 ## Method
+
 1. Built a full divergence inventory (excluding `node_modules`, `dist`, `.claude`).
 2. Classified each divergence by intent:
    - SEP-0051/stellar JSON compliance
@@ -17,6 +19,7 @@
 ## Decisions
 
 ### Adopted from root
+
 - `src/codec.ts`
   - Restored typed XDR error codes, default byte-limit parity (`32 MiB`), and safer generated decoding expectations.
 - `src/json.ts`
@@ -33,6 +36,7 @@
   - Brought in root helper utilities and coverage.
 
 ### Kept from worktree (intentional)
+
 - `scripts/codegen/index.ts`
   - Pinned-channel/source-lock workflow and deterministic metadata generation.
 - `scripts/codegen/source-lock.json`
@@ -46,6 +50,7 @@
 - Existing codex docs under `docs/codex-*`.
 
 ## Conflict Resolutions
+
 - `scripts/codegen/generator.ts`
   - Merged root runtime semantics with worktree deterministic header support.
   - Kept `sourceDescriptor` parameter support so `scripts/codegen/index.ts` remains compatible.
@@ -58,6 +63,7 @@
   - Added `export * from './helpers.js'` so helper functionality is available via main package entry.
 
 ## Verification
+
 - `bun run test`
   - Passed: **10 files, 324 tests**.
 - `bun run typecheck`
@@ -66,4 +72,5 @@
   - Passed (`tsdown` + `scripts/verify-exports.mjs`).
 
 ## Net Result
+
 Phase 0 now preserves worktree determinism/tooling and stronger SCVal validation while restoring root’s SEP-critical JSON/XDR behavior and generated stellar-specific mappings needed for SEP-0051 alignment.

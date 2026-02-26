@@ -145,7 +145,10 @@ export function getStellarXdrBase(ref: string): string {
   return `${STELLAR_XDR_BASE_PREFIX}/${ref}`
 }
 
-export function resolveCodegenOptions(cli: CodegenCliArgs, sourceLock: SourceLock): ResolvedCodegenOptions {
+export function resolveCodegenOptions(
+  cli: CodegenCliArgs,
+  sourceLock: SourceLock,
+): ResolvedCodegenOptions {
   const lockForChannel = sourceLock.stellar_xdr[cli.channel]
   if (!lockForChannel) {
     throw new Error(`No source lock configured for channel: ${cli.channel}`)
@@ -153,9 +156,8 @@ export function resolveCodegenOptions(cli: CodegenCliArgs, sourceLock: SourceLoc
 
   const ref = cli.ref ?? lockForChannel.ref
   const outDir = cli.outDir ?? DEFAULT_OUT_DIR_BY_CHANNEL[cli.channel]
-  const lockedCommit = lockForChannel.commit && ref === lockForChannel.ref
-    ? lockForChannel.commit
-    : ''
+  const lockedCommit =
+    lockForChannel.commit && ref === lockForChannel.ref ? lockForChannel.commit : ''
   const sourceDescriptor = `https://github.com/stellar/stellar-xdr (channel=${cli.channel}, ref=${ref}${lockedCommit ? `, commit=${lockedCommit}` : ''})`
 
   return {
@@ -193,7 +195,10 @@ async function main() {
     return
   }
   const sourceLock = await readSourceLock()
-  const { channel, ref, outDir, lockedCommit, sourceDescriptor } = resolveCodegenOptions(cli, sourceLock)
+  const { channel, ref, outDir, lockedCommit, sourceDescriptor } = resolveCodegenOptions(
+    cli,
+    sourceLock,
+  )
   const stellarXdrBase = getStellarXdrBase(ref)
 
   console.log(`Generating Stellar XDR TypeScript from ${sourceDescriptor}\n`)
@@ -306,7 +311,7 @@ async function main() {
   for (const { ast } of parsed) {
     for (const def of ast.definitions) {
       if (def.kind === 'enum') {
-        enumPrefixMap.set(def.name, computeEnumPrefix(def.members.map(m => m.name)))
+        enumPrefixMap.set(def.name, computeEnumPrefix(def.members.map((m) => m.name)))
       }
     }
   }
@@ -479,14 +484,19 @@ function generateIntrospectionMetadata(
     '',
   ]
 
-  const enumDefs = definitions.filter((def): def is Extract<XdrDefinition, { kind: 'enum' }> => def.kind === 'enum')
-  const unionDefs = definitions.filter((def): def is Extract<XdrDefinition, { kind: 'union' }> => def.kind === 'union')
+  const enumDefs = definitions.filter(
+    (def): def is Extract<XdrDefinition, { kind: 'enum' }> => def.kind === 'enum',
+  )
+  const unionDefs = definitions.filter(
+    (def): def is Extract<XdrDefinition, { kind: 'union' }> => def.kind === 'union',
+  )
 
   const enumEntries = enumDefs.map((def) => {
     const prefix = enumPrefixMap.get(def.name) ?? ''
     const members: EnumIntrospectionMember[] = def.members.map((member) => ({
       name: member.name,
-      value: typeof member.value === 'number' ? member.value : (valueResolver.get(member.value) ?? null),
+      value:
+        typeof member.value === 'number' ? member.value : (valueResolver.get(member.value) ?? null),
       jsonName: enumMemberJsonName(member.name, prefix),
     }))
     return { name: def.name, prefix, members }
@@ -511,14 +521,18 @@ function generateIntrospectionMetadata(
 
   const unionEntries = unionDefs.map((def) => {
     const discriminantType = typeRefToString(def.discriminant.type)
-    const isEnumDiscriminant = def.discriminant.type.kind === 'named'
-      && kindRegistry.get(def.discriminant.type.name) === 'enum'
-    const enumPrefix = isEnumDiscriminant ? (enumPrefixMap.get(def.discriminant.type.name) ?? '') : ''
+    const isEnumDiscriminant =
+      def.discriminant.type.kind === 'named' &&
+      kindRegistry.get(def.discriminant.type.name) === 'enum'
+    const enumPrefix = isEnumDiscriminant
+      ? (enumPrefixMap.get(def.discriminant.type.name) ?? '')
+      : ''
 
     const arms = def.arms.map((arm) => {
       const cases: UnionIntrospectionCase[] = arm.cases.map((caseValue) => ({
         raw: caseValue,
-        numericValue: typeof caseValue === 'number' ? caseValue : (valueResolver.get(caseValue) ?? null),
+        numericValue:
+          typeof caseValue === 'number' ? caseValue : (valueResolver.get(caseValue) ?? null),
         jsonName: isEnumDiscriminant
           ? enumMemberJsonName(String(caseValue), enumPrefix)
           : `v${caseValue}`,
@@ -534,20 +548,24 @@ function generateIntrospectionMetadata(
       name: def.name,
       discriminantName: def.discriminant.name,
       discriminantType,
-      discriminantKind: isEnumDiscriminant ? 'enum' : 'int' as const,
+      discriminantKind: isEnumDiscriminant ? 'enum' : ('int' as const),
       defaultArmType: def.defaultArm ? typeRefToString(def.defaultArm) : null,
       arms,
     }
   })
 
-  lines.push('export const UNION_INTROSPECTION: Record<string, UnionIntrospection> = /*#__PURE__*/ {')
+  lines.push(
+    'export const UNION_INTROSPECTION: Record<string, UnionIntrospection> = /*#__PURE__*/ {',
+  )
   for (const entry of unionEntries) {
     lines.push(`  ${q(entry.name)}: {`)
     lines.push(`    name: ${q(entry.name)},`)
     lines.push(`    discriminantName: ${q(entry.discriminantName)},`)
     lines.push(`    discriminantType: ${q(entry.discriminantType)},`)
     lines.push(`    discriminantKind: ${q(entry.discriminantKind)},`)
-    lines.push(`    defaultArmType: ${entry.defaultArmType === null ? 'null' : q(entry.defaultArmType)},`)
+    lines.push(
+      `    defaultArmType: ${entry.defaultArmType === null ? 'null' : q(entry.defaultArmType)},`,
+    )
     lines.push('    arms: [')
     for (const arm of entry.arms) {
       lines.push('      {')

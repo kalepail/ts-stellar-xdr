@@ -93,16 +93,20 @@ describe('rs-stellar-xdr parity: serde_ints.rs', () => {
     expect(toJsonConfigSettingEntry(x)).toEqual({
       live_soroban_state_size_window: ['1', '2', '3', '18446744073709551615'],
     })
-    expect(fromJsonConfigSettingEntry({
-      live_soroban_state_size_window: ['1', '2', '3', '18446744073709551615'],
-    })).toEqual(x)
+    expect(
+      fromJsonConfigSettingEntry({
+        live_soroban_state_size_window: ['1', '2', '3', '18446744073709551615'],
+      }),
+    ).toEqual(x)
   })
 })
 
 describe('rs-stellar-xdr parity: serde.rs', () => {
   it('serializes/deserializes AccountID as a G-address string', () => {
     const account = fromJsonAccountID('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF')
-    expect(toJsonAccountID(account)).toBe('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF')
+    expect(toJsonAccountID(account)).toBe(
+      'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF',
+    )
   })
 
   it('serializes/deserializes ContractID as a C-address string', () => {
@@ -215,7 +219,9 @@ describe('rs-stellar-xdr parity: str.rs asset code edge cases', () => {
   })
 
   it('matches AssetCode12 minimum-length null-preserving rendering', () => {
-    expect(toJsonAssetCode12(new Uint8Array([0x61, 0x00, 0x63, 0x64, 0x00, 0, 0, 0, 0, 0, 0, 0]))).toBe('a\\0cd\\0')
+    expect(
+      toJsonAssetCode12(new Uint8Array([0x61, 0x00, 0x63, 0x64, 0x00, 0, 0, 0, 0, 0, 0, 0])),
+    ).toBe('a\\0cd\\0')
   })
 
   it('roundtrips escaped-byte strings to the expected AssetCode variant by byte-length', () => {

@@ -1,11 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import {
-  decodeTransactionEnvelope,
-  encodeTransactionEnvelope,
-  type TransactionEnvelope,
-  type FeeBumpTransactionEnvelope,
-} from '../src/generated/index.ts'
-import { bytesToBase64, base64ToBytes, bytesToHex } from '../src/codec.ts'
+import { decodeTransactionEnvelope, encodeTransactionEnvelope } from '../src/generated/index.ts'
+import { base64ToBytes, bytesToHex } from '../src/codec.ts'
 
 // ---------------------------------------------------------------------------
 // Vector 2: Fee Bump wrapping Payment + Text Memo

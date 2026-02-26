@@ -5,15 +5,11 @@
   "oneOf": [
     {
       "type": "string",
-      "enum": [
-        "none"
-      ]
+      "enum": ["none"]
     },
     {
       "type": "object",
-      "required": [
-        "text"
-      ],
+      "required": ["text"],
       "properties": {
         "text": {
           "$ref": "#/definitions/StringM<28>"
@@ -22,9 +18,7 @@
     },
     {
       "type": "object",
-      "required": [
-        "id"
-      ],
+      "required": ["id"],
       "properties": {
         "id": {
           "type": "string"
@@ -33,9 +27,7 @@
     },
     {
       "type": "object",
-      "required": [
-        "hash"
-      ],
+      "required": ["hash"],
       "properties": {
         "hash": {
           "type": "string",
@@ -48,9 +40,7 @@
     },
     {
       "type": "object",
-      "required": [
-        "return"
-      ],
+      "required": ["return"],
       "properties": {
         "return": {
           "type": "string",

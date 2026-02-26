@@ -25,6 +25,7 @@ Status: Confirmed critical.
 - Direct verification showed exported files were missing.
 
 Why this matters:
+
 - Consumers cannot reliably import subpaths declared in `exports`.
 - This blocks using the package as a base dependency for any new SDK modules.
 
@@ -37,6 +38,7 @@ Status: Confirmed critical.
 - Generated files did not capture source channel/ref metadata beyond “curr branch”.
 
 Why this matters:
+
 - Regeneration can drift unexpectedly over time.
 - SDK behavior can change without intentional protocol-upgrade actions.
 
@@ -48,6 +50,7 @@ Status: Confirmed important.
 - Upstream references (`rs-stellar-xdr`, `js-stellar-base`) explicitly model channel behavior and update cadence.
 
 Why this matters:
+
 - A modern SDK foundation needs a safe path for protocol pre-adoption and migration testing.
 
 ### 4) Conformance depth is still not enough for “SDK foundation” confidence
@@ -58,6 +61,7 @@ Status: Confirmed important.
 - Missing broad differential/fuzz corpus against reference implementations.
 
 Why this matters:
+
 - Wide XDR surface area and recursive types require stronger automated equivalence guarantees.
 
 ### 5) UTF-8 memo edge behavior is known but unresolved
@@ -68,6 +72,7 @@ Status: Confirmed medium.
 - Policy decision is still open (strict rejection vs raw-preserving representation for invalid text bytes).
 
 Why this matters:
+
 - Without explicit policy, downstream transaction tooling can produce surprising non-lossless behavior.
 
 ### 6) `SCMap` key ordering for complex `SCVal` keys was under-specified in runtime validation
@@ -79,6 +84,7 @@ Status: Confirmed important.
 - `rs-stellar-xdr` validates maps with strict ascending key comparison (`w[0].key < w[1].key`) and no duplicates.
 
 Why this matters:
+
 - Soroban map keys are frequently composite values, so key ordering correctness is a consensus-adjacent safety property for SDK behavior.
 
 ## Additional Research Confirmation
@@ -88,25 +94,30 @@ Why this matters:
 Confirmed `tsdown` supports `outExtensions(...)` and `fixedExtension` for explicit JS/DTS extension control.
 
 Decision:
+
 - Keep ESM output but force generated filenames to `.js` and `.d.ts` so package exports are conventional and stable.
 
 ### Stellar XDR pinning surface
 
 Confirmed:
+
 - `stellar/stellar-xdr` has release tags (latest currently `v25.0`, commit `0a621ec...`).
 - `js-stellar-base` Makefile pins XDR source to a specific commit for regeneration.
 
 Decision:
+
 - Introduce a local source lock file and codegen metadata output.
 - Default codegen to pinned `curr` release (`v25.0`), with explicit override options.
 
 ### Channeling precedence
 
 Confirmed:
+
 - `rs-stellar-xdr` exposes channel model (`curr`, `next`) as first-class.
 - `js-stellar-base` keeps both generated surfaces (`curr_generated.js`, `next_generated.js`).
 
 Decision:
+
 - Keep `curr` as default stable generated output.
 - Add explicit `codegen:next` command to generate isolated `next` artifacts into a separate directory for migration work.
 
@@ -135,19 +146,28 @@ Decision:
 ## Implementation Update (2026-02-26)
 
 1. Implemented strict complex-key ordering in [`src/validate.ts`](./../src/validate.ts) for `SCMap` validation:
+
 - Added deep/recursive `SCVal` comparison for `SCV_VEC`, `SCV_MAP`, `SCV_CONTRACT_INSTANCE`, signed-int-part structs, `SCV_LEDGER_KEY_NONCE`, and structured address/error ordering.
 - Removed the prior “complex fallback to equality” behavior.
+
 2. Added regression coverage in [`tests/validate.test.ts`](./../tests/validate.test.ts):
+
 - Sorted distinct complex keys accepted.
 - Unsorted complex keys rejected.
 - Duplicate complex keys rejected.
+
 3. Added strict UTF-8 decoding policy in [`src/codec.ts`](./../src/codec.ts):
+
 - `readString` now uses fatal UTF-8 decoding and throws `XdrReadError` on invalid byte sequences instead of silently replacing with U+FFFD.
 - Updated non-UTF8 memo vector behavior in [`tests/roundtrip-v0.test.ts`](./../tests/roundtrip-v0.test.ts): invalid UTF-8 now fails decode by policy.
+
 4. Added differential conformance harness against `@stellar/stellar-base` in [`tests/conformance-stellar-base.test.ts`](./../tests/conformance-stellar-base.test.ts):
+
 - Cross-validates envelope type mapping, operation counts, memo arm mapping, outer/inner signature counts, and byte-identical re-encoding for representative V0, V1, and fee-bump vectors (including Soroban fee-bump vectors).
 - Documents intentional policy difference on invalid UTF-8 payloads.
+
 5. Revalidated branch health:
+
 - `bun run typecheck` passed.
 - `bun run test` passed.
 - `bun run build` passed (including export verification).
@@ -155,19 +175,28 @@ Decision:
 ## Implementation Update (2026-02-26, Parallel Resource Pass)
 
 1. Added fixed-width range enforcement for JSON integer-part conversions in [`src/json.ts`](./../src/json.ts):
+
 - `decimalToInt128Parts`, `decimalToUint128Parts`, `decimalToInt256Parts`, and `decimalToUint256Parts` now reject out-of-range values with `RangeError` instead of silently truncating.
+
 2. Added stricter asset-code JSON helpers in [`src/json.ts`](./../src/json.ts):
+
 - Introduced `trimAssetCode4`, `trimAssetCode12`, `padAssetCode4`, `padAssetCode12`, and `assetCodeByteLength`.
 - `AssetCode12` keeps at least 5 bytes in string form and validates 5-12 byte JSON inputs.
+
 3. Updated codegen in [`scripts/codegen/generator.ts`](./../scripts/codegen/generator.ts) and regenerated [`src/generated`](./../src/generated):
+
 - All generated union `fromJson*` functions now ignore optional `$schema` and require exactly one non-`$schema` variant key.
 - AssetCode union JSON deserialization now selects 4/12 forms by encoded byte length, not JS string length.
+
 4. Extended tests in [`tests/json.test.ts`](./../tests/json.test.ts):
+
 - Added overflow rejection coverage for 128/256-bit conversions.
 - Added `$schema`-aware union decode coverage and multi-key union rejection.
 - Added asset-code byte-length and bounds coverage.
+
 5. Created detailed audit/action log in [`docs/codex-parallel-resource-audit-2026-02-26.md`](./codex-parallel-resource-audit-2026-02-26.md).
 6. Revalidated branch health after regeneration:
+
 - `bun run typecheck` passed.
 - `bun run test` passed (281 tests).
 - `bun run build` passed (including export verification).

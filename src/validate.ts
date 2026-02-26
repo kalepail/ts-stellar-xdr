@@ -114,9 +114,7 @@ export function validateScMap(map: SCMap): void {
     const cmp = compareScVal(map[i - 1]!.key, map[i]!.key)
     if (cmp >= 0) {
       if (cmp === 0) {
-        throw new ScValValidationError(
-          `Invalid SCMap: duplicate key at index ${i}`,
-        )
+        throw new ScValValidationError(`Invalid SCMap: duplicate key at index ${i}`)
       }
       throw new ScValValidationError(
         `Invalid SCMap: keys not sorted at index ${i} (key ${i - 1} > key ${i})`,

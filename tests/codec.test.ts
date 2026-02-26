@@ -1,20 +1,54 @@
 import { describe, it, expect } from 'vitest'
 import {
   padLen,
-  createReader, createReaderFromBase64, assertFullyConsumed, remainingBytes,
-  createWriter, toBytes, toBase64,
-  readInt32, readUint32, readInt64, readUint64, readBool, readFloat, readDouble,
-  readFixedOpaque, readVarOpaque, readString,
-  writeInt32, writeUint32, writeInt64, writeUint64, writeBool, writeFloat, writeDouble,
-  writeFixedOpaque, writeVarOpaque, writeString,
-  readOptional, writeOptional,
-  readFixedArray, writeFixedArray,
-  readVarArray, writeVarArray,
-  beginComposite, endComposite,
-  encode, decode, validate, validateXDR, decodeStream,
-  bytesToBase64, base64ToBytes, bytesToHex, hexToBytes,
-  XdrReadError, XdrWriteError,
-  DEFAULT_LIMITS, LIMITS_NONE,
+  createReader,
+  createReaderFromBase64,
+  assertFullyConsumed,
+  remainingBytes,
+  createWriter,
+  toBytes,
+  toBase64,
+  readInt32,
+  readUint32,
+  readInt64,
+  readUint64,
+  readBool,
+  readFloat,
+  readDouble,
+  readFixedOpaque,
+  readVarOpaque,
+  readString,
+  writeInt32,
+  writeUint32,
+  writeInt64,
+  writeUint64,
+  writeBool,
+  writeFloat,
+  writeDouble,
+  writeFixedOpaque,
+  writeVarOpaque,
+  writeString,
+  readOptional,
+  writeOptional,
+  readFixedArray,
+  writeFixedArray,
+  readVarArray,
+  writeVarArray,
+  beginComposite,
+  endComposite,
+  encode,
+  decode,
+  validate,
+  validateXDR,
+  decodeStream,
+  bytesToBase64,
+  base64ToBytes,
+  bytesToHex,
+  hexToBytes,
+  XdrReadError,
+  XdrWriteError,
+  DEFAULT_LIMITS,
+  LIMITS_NONE,
   type XdrLimits,
 } from '../src/codec.ts'
 
@@ -320,7 +354,7 @@ describe('string', () => {
   it('rejects invalid UTF-8 byte sequences (fatal mode)', () => {
     // Construct a var-opaque with an invalid UTF-8 byte (0xD1 is an incomplete multi-byte sequence)
     const w = createWriter()
-    writeVarOpaque(w, new Uint8Array([0xD1]), 100)
+    writeVarOpaque(w, new Uint8Array([0xd1]), 100)
     const r = createReader(toBytes(w))
     expect(() => readString(r, 100)).toThrow()
   })
@@ -547,9 +581,7 @@ describe('XDR wire format compliance', () => {
     // "Hello":  48 65 6c 6c 6f
     // padding:  00 00 00
     const bytes = new Uint8Array([
-      0x00, 0x00, 0x00, 0x05,
-      0x48, 0x65, 0x6c, 0x6c, 0x6f,
-      0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x05, 0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x00, 0x00, 0x00,
     ])
     const r = createReader(bytes)
     expect(readString(r, 100)).toBe('Hello')
@@ -624,7 +656,7 @@ describe('depth and byte limits', () => {
     expect(r.bytesRead).toBe(0)
     readUint32(r) // 4 bytes
     expect(r.bytesRead).toBe(4)
-    readInt64(r)  // 8 bytes
+    readInt64(r) // 8 bytes
     expect(r.bytesRead).toBe(12)
     readFixedOpaque(r, 3) // 4 bytes (3 data + 1 pad)
     expect(r.bytesRead).toBe(16)
@@ -785,7 +817,7 @@ describe('typed error codes', () => {
 
   it('NON_ZERO_PADDING on bad padding bytes', () => {
     // 1-byte opaque [0xFF] followed by 3 pad bytes [0x01, 0x00, 0x00] (first pad is non-zero)
-    const buf = new Uint8Array([0xFF, 0x01, 0x00, 0x00])
+    const buf = new Uint8Array([0xff, 0x01, 0x00, 0x00])
     const r = createReader(buf)
     try {
       readFixedOpaque(r, 1)
@@ -846,7 +878,7 @@ describe('typed error codes', () => {
 
   it('UTF8_ERROR on invalid UTF-8 in string', () => {
     const w = createWriter()
-    writeVarOpaque(w, new Uint8Array([0xD1]), 100)
+    writeVarOpaque(w, new Uint8Array([0xd1]), 100)
     const r = createReader(toBytes(w))
     try {
       readString(r, 100)

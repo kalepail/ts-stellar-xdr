@@ -6,29 +6,30 @@ for the Stellar network.
 
 ## Repositories Analyzed
 
-| Repository | What it is |
-|---|---|
-| [stellar/dts-xdr](https://github.com/stellar/dts-xdr) | TypeScript type declarations for the existing js-xdr library |
-| [stellar/js-xdr](https://github.com/stellar/js-xdr) | Current JS XDR runtime (class-based, no tree-shaking) |
-| [stellar/js-stellar-base](https://github.com/stellar/js-stellar-base) | JS Stellar primitives: Transaction, Operation, StrKey, signing |
-| [stellar/js-stellar-sdk](https://github.com/stellar/js-stellar-sdk) | Full JS SDK: Horizon client, Soroban RPC, contract.Client |
-| [tomerweller/ts-xdr](https://github.com/tomerweller/ts-xdr) | Independent TypeScript XDR library with type-value duality |
-| [stellar/rs-stellar-xdr](https://github.com/stellar/rs-stellar-xdr) | Rust reference implementation — the gold standard |
-| [stellar/xdrgen](https://github.com/stellar/xdrgen) | Ruby-based XDR code generator (supports multiple languages) |
-| [stellar/stellar-xdr](https://github.com/stellar/stellar-xdr) | Canonical .x IDL source files for all Stellar XDR types |
-| [stellar/js-stellar-xdr-json](https://github.com/stellar/js-stellar-xdr-json) | JSON serialization for Stellar XDR (JS) |
-| [stellar/go-xdr](https://github.com/stellar/go-xdr) | Go XDR codec |
-| [stellar/go-stellar-xdr-json](https://github.com/stellar/go-stellar-xdr-json) | JSON serialization for Stellar XDR (Go) |
+| Repository                                                                    | What it is                                                     |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| [stellar/dts-xdr](https://github.com/stellar/dts-xdr)                         | TypeScript type declarations for the existing js-xdr library   |
+| [stellar/js-xdr](https://github.com/stellar/js-xdr)                           | Current JS XDR runtime (class-based, no tree-shaking)          |
+| [stellar/js-stellar-base](https://github.com/stellar/js-stellar-base)         | JS Stellar primitives: Transaction, Operation, StrKey, signing |
+| [stellar/js-stellar-sdk](https://github.com/stellar/js-stellar-sdk)           | Full JS SDK: Horizon client, Soroban RPC, contract.Client      |
+| [tomerweller/ts-xdr](https://github.com/tomerweller/ts-xdr)                   | Independent TypeScript XDR library with type-value duality     |
+| [stellar/rs-stellar-xdr](https://github.com/stellar/rs-stellar-xdr)           | Rust reference implementation — the gold standard              |
+| [stellar/xdrgen](https://github.com/stellar/xdrgen)                           | Ruby-based XDR code generator (supports multiple languages)    |
+| [stellar/stellar-xdr](https://github.com/stellar/stellar-xdr)                 | Canonical .x IDL source files for all Stellar XDR types        |
+| [stellar/js-stellar-xdr-json](https://github.com/stellar/js-stellar-xdr-json) | JSON serialization for Stellar XDR (JS)                        |
+| [stellar/go-xdr](https://github.com/stellar/go-xdr)                           | Go XDR codec                                                   |
+| [stellar/go-stellar-xdr-json](https://github.com/stellar/go-stellar-xdr-json) | JSON serialization for Stellar XDR (Go)                        |
 
 ---
 
 ## What We Already Have (Implemented)
 
 ### Core Codec (`src/codec.ts`)
+
 - **XDR RFC 4506 compliance** — big-endian, 4-byte alignment, zero-padding validation
 - **All primitive types** — int32, uint32, int64 (bigint), uint64 (bigint), bool, float, double
 - **Opaque/string** — fixed opaque, var opaque, var string (UTF-8)
-- **Composites** — optional (T*), fixed array (T[N]), var array (T<N>)
+- **Composites** — optional (T\*), fixed array (T[N]), var array (T<N>)
 - **Depth + byte limit tracking** — `XdrLimits` with `maxDepth: 500` and `maxBytes: 8 MiB` defaults, matching rs-stellar-xdr's `Limits` system
 - **`LIMITS_NONE` escape hatch** — `{ maxDepth: Infinity, maxBytes: Infinity }` for trusted input
 - **Write-side range validation** — all integer writes reject NaN, Infinity, and out-of-range values
@@ -41,6 +42,7 @@ for the Stellar network.
 - **`/*#__PURE__*/` annotations** — tree-shaking hints for bundlers
 
 ### Code Generator (`scripts/codegen/`)
+
 - **Custom TypeScript codegen** — no Ruby, no Docker, no xdrgen dependency
 - **Lexer → Parser → AST → Generator** pipeline
 - **480 definitions across 13 files** from stellar/stellar-xdr `curr` branch
@@ -54,6 +56,7 @@ for the Stellar network.
 - **JSON serialization** — `toJson${Type}` / `fromJson${Type}` for all types, enum prefix maps, custom StrKey/AssetCode/Int128-256 handling
 
 ### JSON Serialization (`src/json.ts` + generated)
+
 - **Canonical JSON format** — matches rs-stellar-xdr serde output
 - **Enum JSON** — prefix-stripped, lowercased names (e.g. `MEMO_NONE` → `"none"`)
 - **Union JSON** — void arms as bare strings, non-void as `{"arm_name": value}`
@@ -65,12 +68,14 @@ for the Stellar network.
 - **Runtime helpers** — `src/json.ts` (2.35 kB, 0.89 kB gzipped)
 
 ### Package Design
+
 - **Multi-entry-point exports** — `./codec`, `./strkey`, `./hashing`, `./validate`, `./json`, `./transaction`, `./contract`, `./ledger-entries`, `./scp`, `./overlay`
 - **Tree-shakeable** — `sideEffects: false`, function-based API (no classes)
 - **Zero dependencies** — works in all environments (browser, Node, Deno, Bun)
 - **ESM-only** — `"type": "module"` with `.js` import extensions
 
 ### Tests
+
 - **454 tests passing** — codec primitives, roundtrip tests, strkey, hashing, validation, JSON serialization, SCVal conversions, framed XDR, and codegen/introspection checks
 - **Write validation tests** — non-integer, NaN, Infinity, out-of-range for all integer types
 - **Depth/byte limit tests** — enforcement, tracking, custom limits, LIMITS_NONE
@@ -96,26 +101,26 @@ spec document** — it is implementation-defined.
 
 **Canonical JSON Format (from rs-stellar-xdr serde):**
 
-| XDR Concept | JSON Representation | Example |
-|---|---|---|
-| Enum (plain) | snake_case string | `"none"`, `"text"`, `"id"` |
-| Enum (custom_str_impl) | StrKey or Display string | `"GAAA..."` |
-| int64 / uint64 | JSON string (decimal) | `"123"`, `"-456"` |
-| int32 / uint32 | JSON number | `100`, `0` |
-| Int128Parts / UInt128Parts | JSON string (decimal) | `"18446744073709551618"` |
-| opaque<> (BytesM) | **Hex string** (not base64) | `"68656c6c6f"` |
-| opaque[N] (Hash, Uint256) | **Hex string** | `"3031323334..."` |
-| string<> (StringM) | Escaped printable string | `"hello world"` |
-| PublicKey / AccountId | StrKey G-address | `"GAAA..."` |
-| MuxedAccount | StrKey G/M-address | `"GA6L..."` or `"MAAA..."` |
-| ScAddress | StrKey G/C-address | `"GAAA..."` or `"CAAA..."` |
-| Asset (union) | Structured union object | `"native"` or `{"credit_alphanum4": {...}}` |
-| AssetCode4 / AssetCode12 | Escaped ASCII string | `"ABCD"` |
-| Union (data arm) | `{"snake_case_name": value}` | `{"text": "Stellar"}` |
-| Union (void arm) | `"snake_case_name"` | `"none"`, `"v0"` |
-| Optional present | Value directly | `"GAAA..."` |
-| Optional absent | `null` | `null` |
-| Struct fields | snake_case keys | `"source_account"`, `"seq_num"` |
+| XDR Concept                | JSON Representation          | Example                                     |
+| -------------------------- | ---------------------------- | ------------------------------------------- |
+| Enum (plain)               | snake_case string            | `"none"`, `"text"`, `"id"`                  |
+| Enum (custom_str_impl)     | StrKey or Display string     | `"GAAA..."`                                 |
+| int64 / uint64             | JSON string (decimal)        | `"123"`, `"-456"`                           |
+| int32 / uint32             | JSON number                  | `100`, `0`                                  |
+| Int128Parts / UInt128Parts | JSON string (decimal)        | `"18446744073709551618"`                    |
+| opaque<> (BytesM)          | **Hex string** (not base64)  | `"68656c6c6f"`                              |
+| opaque[N] (Hash, Uint256)  | **Hex string**               | `"3031323334..."`                           |
+| string<> (StringM)         | Escaped printable string     | `"hello world"`                             |
+| PublicKey / AccountId      | StrKey G-address             | `"GAAA..."`                                 |
+| MuxedAccount               | StrKey G/M-address           | `"GA6L..."` or `"MAAA..."`                  |
+| ScAddress                  | StrKey G/C-address           | `"GAAA..."` or `"CAAA..."`                  |
+| Asset (union)              | Structured union object      | `"native"` or `{"credit_alphanum4": {...}}` |
+| AssetCode4 / AssetCode12   | Escaped ASCII string         | `"ABCD"`                                    |
+| Union (data arm)           | `{"snake_case_name": value}` | `{"text": "Stellar"}`                       |
+| Union (void arm)           | `"snake_case_name"`          | `"none"`, `"v0"`                            |
+| Optional present           | Value directly               | `"GAAA..."`                                 |
+| Optional absent            | `null`                       | `null`                                      |
+| Struct fields              | snake_case keys              | `"source_account"`, `"seq_num"`             |
 
 **Priority:** High for SDK readiness. Depends on StrKey (Gap 2) for
 PublicKey/AccountId/MuxedAccount/ScAddress/Contract serialization.
@@ -143,17 +148,18 @@ MuxedAccount (G/M-address), AssetCode (trimmed ASCII), and ContractID (C-address
 
 **Version Bytes:**
 
-| Key Type | Version Byte | Hex | First Char | Payload | Encoded Length |
-|---|---|---|---|---|---|
-| ED25519 Public Key | 6 << 3 = 48 | 0x30 | G | 32 bytes | 56 chars |
-| ED25519 Secret Seed | 18 << 3 = 144 | 0x90 | S | 32 bytes | 56 chars |
-| Muxed Account | 12 << 3 = 96 | 0x60 | M | 32 + 8 bytes | 69 chars |
-| Pre-Auth Tx | 19 << 3 = 152 | 0x98 | T | 32 bytes | 56 chars |
-| SHA256 Hash | 23 << 3 = 184 | 0xB8 | X | 32 bytes | 56 chars |
-| Signed Payload | 15 << 3 = 120 | 0x78 | P | variable | variable |
-| Contract | 2 << 3 = 16 | 0x10 | C | 32 bytes | 56 chars |
+| Key Type            | Version Byte  | Hex  | First Char | Payload      | Encoded Length |
+| ------------------- | ------------- | ---- | ---------- | ------------ | -------------- |
+| ED25519 Public Key  | 6 << 3 = 48   | 0x30 | G          | 32 bytes     | 56 chars       |
+| ED25519 Secret Seed | 18 << 3 = 144 | 0x90 | S          | 32 bytes     | 56 chars       |
+| Muxed Account       | 12 << 3 = 96  | 0x60 | M          | 32 + 8 bytes | 69 chars       |
+| Pre-Auth Tx         | 19 << 3 = 152 | 0x98 | T          | 32 bytes     | 56 chars       |
+| SHA256 Hash         | 23 << 3 = 184 | 0xB8 | X          | 32 bytes     | 56 chars       |
+| Signed Payload      | 15 << 3 = 120 | 0x78 | P          | variable     | variable       |
+| Contract            | 2 << 3 = 16   | 0x10 | C          | 32 bytes     | 56 chars       |
 
 **Key Gotchas:**
+
 1. CRC16 checksum is little-endian (despite network byte order for data)
 2. Muxed account memo ID is big-endian uint64
 3. Signed payload inner data uses XDR var-opaque encoding (4-byte length + padding)
@@ -172,9 +178,11 @@ plus typed convenience helpers for G/S/C/M addresses.
 **Source:** js-stellar-base, rs-stellar-xdr
 
 **Problem:** Transaction signatures require a specific hash:
+
 ```
 SHA256(networkId || envelopeTypeTx || xdr(transaction))
 ```
+
 Where `networkId` is `SHA256(networkPassphrase)` and `envelopeTypeTx` is the
 XDR-encoded `EnvelopeType` discriminant.
 
@@ -248,29 +256,30 @@ union/struct JSON objects. Our library correctly handles 11 of 19 but misses 8.
 
 **Full `custom_str_impl` type list and our status:**
 
-| Type | rs-stellar-xdr JSON | Our JSON | Match? |
-|---|---|---|---|
-| `PublicKey` | G-address string | G-address string | YES |
-| `AccountId` | G-address string (via PublicKey) | G-address string | YES |
-| `ContractId` | C-address string | C-address string | YES |
-| `MuxedAccount` | G/M-address string | G/M-address string | YES |
-| `AssetCode` | Trimmed ASCII | Trimmed ASCII | YES |
-| `AssetCode4` | Trimmed ASCII | Trimmed ASCII | YES |
-| `AssetCode12` | Trimmed ASCII | Trimmed ASCII | YES |
-| `Int128Parts` | Decimal string | Decimal string | YES |
-| `UInt128Parts` | Decimal string | Decimal string | YES |
-| `Int256Parts` | Decimal string | Decimal string | YES |
-| `UInt256Parts` | Decimal string | Decimal string | YES |
-| **`SignerKey`** | **G/T/X/P strkey string** | Union object `{"ed25519":"hex"}` | **NO** |
-| **`SignerKeyEd25519SignedPayload`** | **P-strkey string** | Struct object `{"ed25519":"hex","payload":"hex"}` | **NO** |
-| **`NodeId`** | **G-address string** | G-address (via PublicKey typedef) | **VERIFY** |
-| **`ScAddress`** | **G/C/M strkey string** | Union object `{"account":"G..."}` | **NO** |
-| **`ClaimableBalanceId`** | **Strkey string** | Union object `{"claimable_balance_id_type_v0":"hex"}` | **NO** |
-| **`PoolId`** | **Strkey string** | Hex hash string | **NO** |
-| **`MuxedAccountMed25519`** | **M-strkey string** | Struct object `{"id":"123","ed25519":"hex"}` | **NO** |
-| **`MuxedEd25519Account`** | **M-strkey string** | Struct object `{"id":"123","ed25519":"hex"}` | **NO** |
+| Type                                | rs-stellar-xdr JSON              | Our JSON                                              | Match?     |
+| ----------------------------------- | -------------------------------- | ----------------------------------------------------- | ---------- |
+| `PublicKey`                         | G-address string                 | G-address string                                      | YES        |
+| `AccountId`                         | G-address string (via PublicKey) | G-address string                                      | YES        |
+| `ContractId`                        | C-address string                 | C-address string                                      | YES        |
+| `MuxedAccount`                      | G/M-address string               | G/M-address string                                    | YES        |
+| `AssetCode`                         | Trimmed ASCII                    | Trimmed ASCII                                         | YES        |
+| `AssetCode4`                        | Trimmed ASCII                    | Trimmed ASCII                                         | YES        |
+| `AssetCode12`                       | Trimmed ASCII                    | Trimmed ASCII                                         | YES        |
+| `Int128Parts`                       | Decimal string                   | Decimal string                                        | YES        |
+| `UInt128Parts`                      | Decimal string                   | Decimal string                                        | YES        |
+| `Int256Parts`                       | Decimal string                   | Decimal string                                        | YES        |
+| `UInt256Parts`                      | Decimal string                   | Decimal string                                        | YES        |
+| **`SignerKey`**                     | **G/T/X/P strkey string**        | Union object `{"ed25519":"hex"}`                      | **NO**     |
+| **`SignerKeyEd25519SignedPayload`** | **P-strkey string**              | Struct object `{"ed25519":"hex","payload":"hex"}`     | **NO**     |
+| **`NodeId`**                        | **G-address string**             | G-address (via PublicKey typedef)                     | **VERIFY** |
+| **`ScAddress`**                     | **G/C/M strkey string**          | Union object `{"account":"G..."}`                     | **NO**     |
+| **`ClaimableBalanceId`**            | **Strkey string**                | Union object `{"claimable_balance_id_type_v0":"hex"}` | **NO**     |
+| **`PoolId`**                        | **Strkey string**                | Hex hash string                                       | **NO**     |
+| **`MuxedAccountMed25519`**          | **M-strkey string**              | Struct object `{"id":"123","ed25519":"hex"}`          | **NO**     |
+| **`MuxedEd25519Account`**           | **M-strkey string**              | Struct object `{"id":"123","ed25519":"hex"}`          | **NO**     |
 
 **Fix requires:**
+
 1. Add `SignerKey` to CUSTOM_JSON_TYPES — serialize as G/T/X/P strkey based on variant
 2. Add `SignerKeyEd25519SignedPayload` to CUSTOM_JSON_TYPES — serialize as P-strkey
 3. Add `ScAddress` to CUSTOM_JSON_TYPES — serialize as flat G/C/M strkey
@@ -319,6 +328,7 @@ withDepth<T>(fn: () => T): T {
 ```
 
 **Fix:** Wrap generated struct/union read functions in try/finally:
+
 ```typescript
 beginComposite(r)
 try {
@@ -363,19 +373,19 @@ Three other implementations provide typed error codes for programmatic handling.
 
 **Proposed error codes (11, matching tomerweller/ts-xdr):**
 
-| Code | Meaning |
-|---|---|
-| `INVALID_VALUE` | Value out of valid range |
-| `LENGTH_EXCEEDS_MAX` | Variable-length data exceeds declared maximum |
-| `LENGTH_MISMATCH` | Expected vs actual length mismatch |
-| `NON_ZERO_PADDING` | XDR padding bytes are not all zeros |
-| `BUFFER_UNDERFLOW` | Not enough bytes remaining |
-| `BUFFER_NOT_FULLY_CONSUMED` | Trailing bytes after decode |
-| `DEPTH_LIMIT_EXCEEDED` | Recursion depth limit hit |
-| `BYTE_LIMIT_EXCEEDED` | Byte budget exhausted |
-| `INVALID_ENUM_VALUE` | Unknown enum discriminant value |
-| `INVALID_UNION_DISCRIMINANT` | Invalid union switch value |
-| `UTF8_ERROR` | Invalid UTF-8 in string |
+| Code                         | Meaning                                       |
+| ---------------------------- | --------------------------------------------- |
+| `INVALID_VALUE`              | Value out of valid range                      |
+| `LENGTH_EXCEEDS_MAX`         | Variable-length data exceeds declared maximum |
+| `LENGTH_MISMATCH`            | Expected vs actual length mismatch            |
+| `NON_ZERO_PADDING`           | XDR padding bytes are not all zeros           |
+| `BUFFER_UNDERFLOW`           | Not enough bytes remaining                    |
+| `BUFFER_NOT_FULLY_CONSUMED`  | Trailing bytes after decode                   |
+| `DEPTH_LIMIT_EXCEEDED`       | Recursion depth limit hit                     |
+| `BYTE_LIMIT_EXCEEDED`        | Byte budget exhausted                         |
+| `INVALID_ENUM_VALUE`         | Unknown enum discriminant value               |
+| `INVALID_UNION_DISCRIMINANT` | Invalid union switch value                    |
+| `UTF8_ERROR`                 | Invalid UTF-8 in string                       |
 
 **Implementation:** Single `XdrError` class with `code: XdrErrorCode` property.
 Replace `XdrReadError`/`XdrWriteError` (or keep as subclasses for backwards compat).
@@ -398,6 +408,7 @@ AND `{"hi": 1, "lo": 2}` (struct object) when deserializing Int128Parts/UInt128P
 Our `fromJson` only accepts the decimal string form.
 
 **Fix:** In `fromJsonInt128Parts`/`fromJsonUInt128Parts`/etc., check `typeof json`:
+
 - If `string` → decimal conversion (current path)
 - If `object` with `hi`/`lo` keys → construct from parts directly
 
@@ -434,9 +445,11 @@ Large payloads like transaction sets and full ledger metadata can exceed 8 MiB.
 when building Soroban footprints, indexing ledger state, or deduplicating entries.
 
 **Implementation:** Hand-written utility in `src/helpers.ts` or similar:
+
 ```typescript
 function ledgerEntryToKey(entry: LedgerEntryData): LedgerKey
 ```
+
 Dispatches on entry type, extracts minimal key fields for all 10 entry types:
 Account, Trustline, Offer, Data, ClaimableBalance, LiquidityPool,
 ContractData, ContractCode, ConfigSetting, Ttl.
@@ -455,6 +468,7 @@ LiquidityPool, ContractData, ContractCode, ConfigSetting, TTL. Exported via
 **Source:** rs-stellar-xdr (`tx_hash.rs`, `transaction_conversions.rs`, `tx_auths.rs`)
 
 **Problem:** Three closely related utilities that every SDK needs:
+
 1. `hashTransactionEnvelope(envelope, networkId)` → the hash you sign
 2. `transactionToEnvelope(tx)` → wraps Transaction in unsigned V1 envelope
 3. `extractSorobanAuths(envelope)` → gets all SorobanAuthorizationEntry values
@@ -465,6 +479,7 @@ complete the transaction lifecycle at the XDR layer.
 **Priority:** MEDIUM. Required for transaction signing and Soroban auth workflows.
 
 **Status:** DONE. Implemented in `src/helpers.ts`:
+
 - `transactionToEnvelope(tx)` → unsigned V1 envelope
 - `feeBumpTransactionToEnvelope(tx)` → unsigned fee bump envelope
 - `hashTransactionEnvelope(envelope, networkPassphrase)` → hash dispatching on V0/V1/FeeBump
@@ -482,15 +497,15 @@ and rs-stellar-xdr provide bidirectional conversion.
 
 **Conversion map (JS → ScVal):**
 
-| JS Input | ScVal Output | Notes |
-|---|---|---|
-| `null` / `undefined` | `scvVoid` | |
-| `boolean` | `scvBool` | |
-| `number` / `bigint` | smallest fitting integer | u32/i32/u64/i64/u128/i128/u256/i256 |
-| `string` | `scvString` (default) | `opts.type` can override to `symbol`, `address` |
-| `Uint8Array` | `scvBytes` | |
-| `Array<T>` | `scvVec` | recursive |
-| `object` | `scvMap` | recursive, **keys sorted lexicographically** |
+| JS Input             | ScVal Output             | Notes                                           |
+| -------------------- | ------------------------ | ----------------------------------------------- |
+| `null` / `undefined` | `scvVoid`                |                                                 |
+| `boolean`            | `scvBool`                |                                                 |
+| `number` / `bigint`  | smallest fitting integer | u32/i32/u64/i64/u128/i128/u256/i256             |
+| `string`             | `scvString` (default)    | `opts.type` can override to `symbol`, `address` |
+| `Uint8Array`         | `scvBytes`               |                                                 |
+| `Array<T>`           | `scvVec`                 | recursive                                       |
+| `object`             | `scvMap`                 | recursive, **keys sorted lexicographically**    |
 
 **Also includes:** `scValToBigInt()` for extracting bigint from any integer ScVal,
 `scvSortedMap()` helper that sorts keys before wrapping (Soroban requirement).
@@ -499,6 +514,7 @@ and rs-stellar-xdr provide bidirectional conversion.
 in a separate `@stellar/scval` or SDK-layer package. Already have ScVal validation.
 
 **Status:** DONE. Implemented in `src/scval.ts`:
+
 - `nativeToScVal(val, opts?)` with integer coercion, string/bytes hints, address conversion, recursive vec/map conversion, and passthrough for existing `SCVal`.
 - `scValToNative(scv)` and `scValToBigInt(scv)` utilities.
 - Added 12 focused tests in `tests/scval.test.ts` based on js-stellar-base behavior patterns.
@@ -513,6 +529,7 @@ in a separate `@stellar/scval` or SDK-layer package. Already have ScVal validati
 Currently they must wrap `decode()` in try/catch.
 
 **Implementation:** Generic codec-level function (not per-type generated):
+
 ```typescript
 export function validate<T>(input: Uint8Array | string, readFn: (r: XdrReader) => T): boolean
 ```
@@ -570,10 +587,11 @@ provides `Frame<T>` and `read_xdr_framed_iter()`.
 **Priority:** LOW. Useful for advanced use cases (bucket file processing, network protocols).
 
 **Status:** DONE. Added `src/framed.ts` with:
+
 - `encodeFramed(value, writeFn)`
 - `decodeFramed(input, readFn, limits?)`
 - `decodeFramedStream(input, readFn, limits?)`
-Includes malformed-input and multi-fragment reassembly tests in `tests/framed.test.ts`.
+  Includes malformed-input and multi-fragment reassembly tests in `tests/framed.test.ts`.
 
 ---
 
@@ -588,9 +606,10 @@ Includes malformed-input and multi-fragment reassembly tests in `tests/framed.te
 **Priority:** LOW. Useful for testing upcoming protocol changes.
 
 **Status:** DONE. `scripts/codegen/index.ts` now supports:
+
 - `bun scripts/codegen/index.ts --ref <git-ref>`
 - `--ref=<git-ref>` form
-Default remains `curr`. Added CLI arg parser tests in `tests/codegen.test.ts`.
+  Default remains `curr`. Added CLI arg parser tests in `tests/codegen.test.ts`.
 
 ---
 
@@ -620,10 +639,11 @@ JSON names and tests (`b8_bit`, `b16_bit`, `b32_bit`) in `tests/codegen.test.ts`
 **Priority:** LOW. Useful for tooling but not typical application code.
 
 **Status:** DONE. Added generated metadata in `src/generated/introspection.ts`:
+
 - `ENUM_INTROSPECTION`
 - `UNION_INTROSPECTION`
-Includes enum member values/json names and union discriminant/arm/case metadata.
-Exported via `src/generated/index.ts`, with validation tests in `tests/codegen.test.ts`.
+  Includes enum member values/json names and union discriminant/arm/case metadata.
+  Exported via `src/generated/index.ts`, with validation tests in `tests/codegen.test.ts`.
 
 ---
 
@@ -667,87 +687,97 @@ These are NOT XDR library concerns but will be built on top of ts-stellar-xdr.
 Detailed inventory from js-stellar-base and js-stellar-sdk deep research.
 
 ### Transaction Construction (js-stellar-base)
-| Feature | Details |
-|---|---|
-| TransactionBuilder | Fluent builder: `addOperation()`, `setTimeout()`, `setTimebounds()`, `setLedgerbounds()`, `setMinAccountSequence()`, `setExtraSigners()`, `setSorobanData()`, `build()`. Fee = baseFee × ops + resourceFee. Increments sequence on build. |
-| TransactionBuilder.cloneFrom | Clone a Transaction back into a builder (for Soroban re-simulation) |
-| TransactionBuilder.buildFeeBumpTransaction | Creates FeeBumpTransaction with fee validation |
-| TransactionBuilder.fromXDR | Deserializes base64 → Transaction or FeeBumpTransaction |
-| Operation factories (30+) | `payment`, `createAccount`, `changeTrust`, `manageSellOffer`, `manageBuyOffer`, `setOptions`, `accountMerge`, `manageData`, `bumpSequence`, `createClaimableBalance`, `claimClaimableBalance`, `beginSponsoringFutureReserves`, `endSponsoringFutureReserves`, `revokeAccountSponsorship`, `clawback`, `setTrustLineFlags`, `liquidityPoolDeposit`, `liquidityPoolWithdraw`, `invokeHostFunction`, `extendFootprintTtl`, `restoreFootprint`, `invokeContractFunction`, `createCustomContract`, `createStellarAssetContract`, `uploadContractWasm`, `addSacTransferOperation` |
-| Operation.fromXDRObject | Reverse-parse any Operation XDR to structured JS object |
+
+| Feature                                    | Details                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TransactionBuilder                         | Fluent builder: `addOperation()`, `setTimeout()`, `setTimebounds()`, `setLedgerbounds()`, `setMinAccountSequence()`, `setExtraSigners()`, `setSorobanData()`, `build()`. Fee = baseFee × ops + resourceFee. Increments sequence on build.                                                                                                                                                                                                                                                                                                                                    |
+| TransactionBuilder.cloneFrom               | Clone a Transaction back into a builder (for Soroban re-simulation)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| TransactionBuilder.buildFeeBumpTransaction | Creates FeeBumpTransaction with fee validation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| TransactionBuilder.fromXDR                 | Deserializes base64 → Transaction or FeeBumpTransaction                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Operation factories (30+)                  | `payment`, `createAccount`, `changeTrust`, `manageSellOffer`, `manageBuyOffer`, `setOptions`, `accountMerge`, `manageData`, `bumpSequence`, `createClaimableBalance`, `claimClaimableBalance`, `beginSponsoringFutureReserves`, `endSponsoringFutureReserves`, `revokeAccountSponsorship`, `clawback`, `setTrustLineFlags`, `liquidityPoolDeposit`, `liquidityPoolWithdraw`, `invokeHostFunction`, `extendFootprintTtl`, `restoreFootprint`, `invokeContractFunction`, `createCustomContract`, `createStellarAssetContract`, `uploadContractWasm`, `addSacTransferOperation` |
+| Operation.fromXDRObject                    | Reverse-parse any Operation XDR to structured JS object                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 ### Signing & Keypair (js-stellar-base)
-| Feature | Details |
-|---|---|
-| Keypair class | `random()`, `fromSecret(S...)`, `fromPublicKey(G...)`, `fromRawEd25519Seed()`, `master(networkPassphrase)` |
-| Signing | `sign(data)`, `verify(data, sig)`, `signDecorated(data)` → DecoratedSignature with hint |
-| CAP-40 payload signing | `signPayloadDecorated(data)` — hint = last 4 bytes of payload XOR'd with key hint |
-| Transaction signing | `tx.sign(...keypairs)`, `tx.addSignature(pubkey, base64sig)`, `tx.signHashX(preimage)` |
-| Crypto backend | `@noble/curves/ed25519` (zip215: false for verification) |
+
+| Feature                | Details                                                                                                    |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Keypair class          | `random()`, `fromSecret(S...)`, `fromPublicKey(G...)`, `fromRawEd25519Seed()`, `master(networkPassphrase)` |
+| Signing                | `sign(data)`, `verify(data, sig)`, `signDecorated(data)` → DecoratedSignature with hint                    |
+| CAP-40 payload signing | `signPayloadDecorated(data)` — hint = last 4 bytes of payload XOR'd with key hint                          |
+| Transaction signing    | `tx.sign(...keypairs)`, `tx.addSignature(pubkey, base64sig)`, `tx.signHashX(preimage)`                     |
+| Crypto backend         | `@noble/curves/ed25519` (zip215: false for verification)                                                   |
 
 ### Amount & Price (js-stellar-base)
-| Feature | Details |
-|---|---|
-| Stroops ↔ XLM | Multiply/divide by 10^7 (ONE constant). Max 7 decimal places, int64 range. |
-| Price approximation | Continued fraction algorithm (`best_r`) for rational n/d within int32 range |
-| Soroban token amounts | `formatTokenAmount(amount, decimals)`, `parseTokenAmount(value, decimals)` |
+
+| Feature               | Details                                                                     |
+| --------------------- | --------------------------------------------------------------------------- |
+| Stroops ↔ XLM         | Multiply/divide by 10^7 (ONE constant). Max 7 decimal places, int64 range.  |
+| Price approximation   | Continued fraction algorithm (`best_r`) for rational n/d within int32 range |
+| Soroban token amounts | `formatTokenAmount(amount, decimals)`, `parseTokenAmount(value, decimals)`  |
 
 ### Asset & Liquidity Pool (js-stellar-base)
-| Feature | Details |
-|---|---|
-| Asset class | Constructor validates code (1-12 alphanum) + issuer (G-address). `native()`, `fromOperation()`, `toXDRObject()`, `toChangeTrustXDRObject()`, `contractId(networkPassphrase)`, `equals()`, `compare()` |
-| LiquidityPoolAsset | `new LiquidityPoolAsset(assetA, assetB, fee)` — enforces A < B ordering |
-| getLiquidityPoolId | SHA-256 of XDR pool params |
+
+| Feature            | Details                                                                                                                                                                                               |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Asset class        | Constructor validates code (1-12 alphanum) + issuer (G-address). `native()`, `fromOperation()`, `toXDRObject()`, `toChangeTrustXDRObject()`, `contractId(networkPassphrase)`, `equals()`, `compare()` |
+| LiquidityPoolAsset | `new LiquidityPoolAsset(assetA, assetB, fee)` — enforces A < B ordering                                                                                                                               |
+| getLiquidityPoolId | SHA-256 of XDR pool params                                                                                                                                                                            |
 
 ### Soroban (js-stellar-base)
-| Feature | Details |
-|---|---|
-| authorizeEntry | Signs SorobanAuthorizationEntry with random nonce, constructs HashIdPreimageSorobanAuthorization |
-| authorizeInvocation | Builds fresh auth entry from InvokedContractArgs |
-| SorobanDataBuilder | Builder for SorobanTransactionData: `setResourceFee()`, `setResources()`, `setFootprint()`, `appendFootprint()` |
-| Contract class | `call(method, ...scVals)` → Operation, `getFootprint()` → LedgerKey |
-| nativeToScVal / scValToNative | Bidirectional JS ↔ ScVal conversion with type hints |
-| buildInvocationTree | Converts SorobanAuthorizedInvocation to readable tree |
-| humanizeEvents | Converts DiagnosticEvent/ContractEvent to `{contractId, type, topics, data}` |
+
+| Feature                       | Details                                                                                                         |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| authorizeEntry                | Signs SorobanAuthorizationEntry with random nonce, constructs HashIdPreimageSorobanAuthorization                |
+| authorizeInvocation           | Builds fresh auth entry from InvokedContractArgs                                                                |
+| SorobanDataBuilder            | Builder for SorobanTransactionData: `setResourceFee()`, `setResources()`, `setFootprint()`, `appendFootprint()` |
+| Contract class                | `call(method, ...scVals)` → Operation, `getFootprint()` → LedgerKey                                             |
+| nativeToScVal / scValToNative | Bidirectional JS ↔ ScVal conversion with type hints                                                             |
+| buildInvocationTree           | Converts SorobanAuthorizedInvocation to readable tree                                                           |
+| humanizeEvents                | Converts DiagnosticEvent/ContractEvent to `{contractId, type, topics, data}`                                    |
 
 ### Horizon Client (js-stellar-sdk)
-| Feature | Details |
-|---|---|
-| Server class | Axios-based, CallBuilder factory methods for all endpoints |
-| CallBuilder pattern | Fluent `.cursor()`, `.limit()`, `.order()`, `.join()` → `.call()` or `.stream()` (SSE) |
+
+| Feature                | Details                                                                                       |
+| ---------------------- | --------------------------------------------------------------------------------------------- |
+| Server class           | Axios-based, CallBuilder factory methods for all endpoints                                    |
+| CallBuilder pattern    | Fluent `.cursor()`, `.limit()`, `.order()`, `.join()` → `.call()` or `.stream()` (SSE)        |
 | Transaction submission | `submitTransaction()` with SEP-29 memo check, offer result parsing from TransactionResult XDR |
-| Account loading | `loadAccount(id)` → AccountResponse with sequence management |
+| Account loading        | `loadAccount(id)` → AccountResponse with sequence management                                  |
 
 ### Soroban RPC Client (js-stellar-sdk)
-| Feature | Details |
-|---|---|
-| JSON-RPC 2.0 | `simulateTransaction`, `sendTransaction`, `getTransaction`, `getEvents`, `getLedgerEntries`, `getLatestLedger`, `getTransactions`, `getLedgers` |
-| Parser layer | Decodes all base64 XDR from RPC responses: TransactionMeta, TransactionEnvelope, TransactionResult, DiagnosticEvent, ScVal, SorobanAuthorizationEntry, LedgerKey, LedgerEntryData, LedgerCloseMeta |
-| assembleTransaction | Combines simulation results with original transaction: adds SorobanData, adjusts fee (classic + resource), replaces auth entries |
-| pollTransaction | Configurable retry with SleepStrategy (default 1s interval, 30 attempts) |
+
+| Feature             | Details                                                                                                                                                                                            |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| JSON-RPC 2.0        | `simulateTransaction`, `sendTransaction`, `getTransaction`, `getEvents`, `getLedgerEntries`, `getLatestLedger`, `getTransactions`, `getLedgers`                                                    |
+| Parser layer        | Decodes all base64 XDR from RPC responses: TransactionMeta, TransactionEnvelope, TransactionResult, DiagnosticEvent, ScVal, SorobanAuthorizationEntry, LedgerKey, LedgerEntryData, LedgerCloseMeta |
+| assembleTransaction | Combines simulation results with original transaction: adds SorobanData, adjusts fee (classic + resource), replaces auth entries                                                                   |
+| pollTransaction     | Configurable retry with SleepStrategy (default 1s interval, 30 attempts)                                                                                                                           |
 
 ### Contract Client (js-stellar-sdk)
-| Feature | Details |
-|---|---|
-| contract.Client | Dynamic method generation from ScSpecEntry: `Client.from({contractId, rpcUrl})`, `fromWasmHash()`, `fromWasm()`, `deploy()` |
-| Spec class | Parses WASM custom sections (`contractspecv0`), converts spec types ↔ native JS: `funcArgsToScVals()`, `funcResToNative()`, `nativeToScVal()`, `scValToNative()`, `errorCases()`, `jsonSchema()` |
-| AssembledTransaction | Full lifecycle: build → simulate → sign → send → poll. Handles read-only detection, multi-party auth signing, state restoration, JSON serialization for passing between parties |
-| Binding generator | Generates standalone typed npm packages from contract specs: `client.ts`, `types.ts`, `package.json` |
+
+| Feature              | Details                                                                                                                                                                                          |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| contract.Client      | Dynamic method generation from ScSpecEntry: `Client.from({contractId, rpcUrl})`, `fromWasmHash()`, `fromWasm()`, `deploy()`                                                                      |
+| Spec class           | Parses WASM custom sections (`contractspecv0`), converts spec types ↔ native JS: `funcArgsToScVals()`, `funcResToNative()`, `nativeToScVal()`, `scValToNative()`, `errorCases()`, `jsonSchema()` |
+| AssembledTransaction | Full lifecycle: build → simulate → sign → send → poll. Handles read-only detection, multi-party auth signing, state restoration, JSON serialization for passing between parties                  |
+| Binding generator    | Generates standalone typed npm packages from contract specs: `client.ts`, `types.ts`, `package.json`                                                                                             |
 
 ### Other (js-stellar-base)
-| Feature | Details |
-|---|---|
-| Memo class | Type-safe wrapper: `none()`, `text(str)`, `id(str)`, `hash(buf)`, `return(buf)` with validation |
-| Address class | Universal for Soroban: account (G), contract (C), muxed (M), claimableBalance (B), liquidityPool (P). `toScVal()`, `toScAddress()`, `fromScVal()`, `fromScAddress()` |
-| Claimant class | Predicate builders: `predicateAnd()`, `predicateOr()`, `predicateNot()`, `predicateBeforeAbsoluteTime()` |
-| SignerKey | Converts between StrKey (G/T/H/P) and xdr.SignerKey |
-| Network constants | `PUBLIC`, `TESTNET`, `FUTURENET`, `SANDBOX`, `STANDALONE` passphrases |
+
+| Feature           | Details                                                                                                                                                              |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Memo class        | Type-safe wrapper: `none()`, `text(str)`, `id(str)`, `hash(buf)`, `return(buf)` with validation                                                                      |
+| Address class     | Universal for Soroban: account (G), contract (C), muxed (M), claimableBalance (B), liquidityPool (P). `toScVal()`, `toScAddress()`, `fromScVal()`, `fromScAddress()` |
+| Claimant class    | Predicate builders: `predicateAnd()`, `predicateOr()`, `predicateNot()`, `predicateBeforeAbsoluteTime()`                                                             |
+| SignerKey         | Converts between StrKey (G/T/H/P) and xdr.SignerKey                                                                                                                  |
+| Network constants | `PUBLIC`, `TESTNET`, `FUTURENET`, `SANDBOX`, `STANDALONE` passphrases                                                                                                |
 
 ---
 
 ## Architecture Decisions
 
 ### Why function-based, not class-based
+
 The existing `js-xdr` uses a class hierarchy (`XDR.Struct`, `XDR.Union`, etc.)
 with dynamic class creation via `config()`. This prevents tree-shaking because
 bundlers can't statically determine which methods are used. Our function-based
@@ -755,22 +785,26 @@ approach with `readFoo`/`writeFoo` pairs allows dead-code elimination at the
 function level.
 
 ### Why string literal enums, not TypeScript enums
+
 TypeScript `enum` values are numbers at runtime, requiring bidirectional mapping.
 String literal unions (`type MemoType = 'MEMO_NONE' | 'MEMO_TEXT' | ...`) are
 self-documenting in debuggers and JSON output, and work naturally with
 discriminated union narrowing.
 
 ### Why `readonly` on generated fields
+
 Decoded XDR values should be treated as immutable data. Making fields `readonly`
 prevents accidental mutation and communicates intent. Writers accept the readonly
 types transparently.
 
 ### Why `bigint` for int64/uint64
+
 JavaScript `number` can only safely represent integers up to 2^53 - 1. Stellar
 uses uint64 extensively (balances in stroops, sequence numbers). `bigint` provides
 exact representation with no precision loss.
 
 ### Why custom codegen instead of xdrgen
+
 The official `xdrgen` requires Ruby and generates code through ERB templates.
 Our custom TypeScript pipeline (lexer → parser → AST → generator) runs with
 `bun` directly, produces optimized output tailored to our function-based API,

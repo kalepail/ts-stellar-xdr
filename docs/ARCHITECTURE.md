@@ -26,34 +26,31 @@ A from-scratch, TypeScript-native, tree-shakable XDR codec for the Stellar netwo
 
 ## TypeScript Type Mapping
 
-| XDR type | TypeScript type |
-|---|---|
-| `int` (i32) | `number` |
-| `unsigned int` (u32) | `number` |
-| `hyper` (i64) | `bigint` |
-| `unsigned hyper` (u64) | `bigint` |
-| `bool` | `boolean` |
-| `void` | `void` (omitted in structs) |
-| `opaque[N]` | `Uint8Array` (exactly N bytes) |
-| `opaque<N>` | `Uint8Array` (0 to N bytes) |
-| `string<N>` | `string` |
-| `enum` | string literal union |
-| `struct` | `interface` |
-| `union` | discriminated union |
-| `T[N]` (fixed array) | `[T, T, ...]` (tuple) or `T[]` |
-| `T<N>` (var array) | `T[]` |
-| `T*` (optional) | `T \| undefined` |
-| `typedef T Foo` | `type Foo = T` |
+| XDR type               | TypeScript type                |
+| ---------------------- | ------------------------------ |
+| `int` (i32)            | `number`                       |
+| `unsigned int` (u32)   | `number`                       |
+| `hyper` (i64)          | `bigint`                       |
+| `unsigned hyper` (u64) | `bigint`                       |
+| `bool`                 | `boolean`                      |
+| `void`                 | `void` (omitted in structs)    |
+| `opaque[N]`            | `Uint8Array` (exactly N bytes) |
+| `opaque<N>`            | `Uint8Array` (0 to N bytes)    |
+| `string<N>`            | `string`                       |
+| `enum`                 | string literal union           |
+| `struct`               | `interface`                    |
+| `union`                | discriminated union            |
+| `T[N]` (fixed array)   | `[T, T, ...]` (tuple) or `T[]` |
+| `T<N>` (var array)     | `T[]`                          |
+| `T*` (optional)        | `T \| undefined`               |
+| `typedef T Foo`        | `type Foo = T`                 |
 
 ### Enums → String Literal Unions
 
 ```typescript
 // XDR: enum OperationType { CREATE_ACCOUNT = 0, PAYMENT = 1, ... }
-type OperationType =
-  | 'CREATE_ACCOUNT'
-  | 'PAYMENT'
-  | 'PATH_PAYMENT_STRICT_RECEIVE'
-  // ...
+type OperationType = 'CREATE_ACCOUNT' | 'PAYMENT' | 'PATH_PAYMENT_STRICT_RECEIVE'
+// ...
 
 // Value map lives in the codec (not in the type):
 const OPERATION_TYPE_VALUE: Record<OperationType, number> = /*#__PURE__*/ {
@@ -64,6 +61,7 @@ const OPERATION_TYPE_VALUE: Record<OperationType, number> = /*#__PURE__*/ {
 ```
 
 String literal unions are:
+
 - Fully erased at runtime (zero cost)
 - Exhaustively checkable with `switch`/`if`
 - Readable in debug output
@@ -73,15 +71,16 @@ String literal unions are:
 ```typescript
 // XDR: union TransactionEnvelope switch (EnvelopeType type) { ... }
 type TransactionEnvelope =
-  | { type: 'ENVELOPE_TYPE_TX_V0';       v0:      TransactionV0Envelope }
-  | { type: 'ENVELOPE_TYPE_TX';          v1:      TransactionV1Envelope }
+  | { type: 'ENVELOPE_TYPE_TX_V0'; v0: TransactionV0Envelope }
+  | { type: 'ENVELOPE_TYPE_TX'; v1: TransactionV1Envelope }
   | { type: 'ENVELOPE_TYPE_TX_FEE_BUMP'; feeBump: FeeBumpTransactionEnvelope }
 ```
 
 TypeScript narrows automatically:
+
 ```typescript
 if (env.type === 'ENVELOPE_TYPE_TX') {
-  env.v1.tx.operations  // TS knows this is TransactionV1Envelope
+  env.v1.tx.operations // TS knows this is TransactionV1Envelope
 }
 ```
 
@@ -91,8 +90,8 @@ if (env.type === 'ENVELOPE_TYPE_TX') {
 // XDR: struct Transaction { MuxedAccount sourceAccount; uint32 fee; ... }
 interface Transaction {
   sourceAccount: MuxedAccount
-  fee: number            // uint32
-  seqNum: bigint         // int64
+  fee: number // uint32
+  seqNum: bigint // int64
   cond: Preconditions
   memo: Memo
   operations: Operation[]
@@ -130,9 +129,9 @@ Each domain module also exports top-level helpers that allocate the reader/write
 ```typescript
 import { encodeTransactionEnvelope, decodeTransactionEnvelope } from 'ts-stellar-xdr/transaction'
 
-const bytes  = encodeTransactionEnvelope(tx)
-const tx     = decodeTransactionEnvelope(bytes)
-const tx2    = decodeTransactionEnvelope(base64String)  // also accepts base64
+const bytes = encodeTransactionEnvelope(tx)
+const tx = decodeTransactionEnvelope(bytes)
+const tx2 = decodeTransactionEnvelope(base64String) // also accepts base64
 ```
 
 ---
@@ -209,14 +208,14 @@ ts-stellar-xdr/
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".":                          "./dist/index.js",
-    "./codec":                    "./dist/codec.js",
-    "./transaction":              "./dist/generated/transaction.js",
-    "./contract":                 "./dist/generated/contract.js",
-    "./asset":                    "./dist/generated/asset.js",
-    "./ledger-entries":           "./dist/generated/ledger-entries.js",
-    "./scp":                      "./dist/generated/scp.js",
-    "./overlay":                  "./dist/generated/overlay.js"
+    ".": "./dist/index.js",
+    "./codec": "./dist/codec.js",
+    "./transaction": "./dist/generated/transaction.js",
+    "./contract": "./dist/generated/contract.js",
+    "./asset": "./dist/generated/asset.js",
+    "./ledger-entries": "./dist/generated/ledger-entries.js",
+    "./scp": "./dist/generated/scp.js",
+    "./overlay": "./dist/generated/overlay.js"
   }
 }
 ```
@@ -236,14 +235,14 @@ import { defineConfig } from 'tsdown'
 
 export default defineConfig({
   entry: {
-    index:                    'src/index.ts',
-    codec:                    'src/codec.ts',
-    'generated/transaction':  'src/generated/transaction.ts',
-    'generated/contract':     'src/generated/contract.ts',
-    'generated/asset':        'src/generated/asset.ts',
+    index: 'src/index.ts',
+    codec: 'src/codec.ts',
+    'generated/transaction': 'src/generated/transaction.ts',
+    'generated/contract': 'src/generated/contract.ts',
+    'generated/asset': 'src/generated/asset.ts',
     'generated/ledger-entries': 'src/generated/ledger-entries.ts',
-    'generated/scp':          'src/generated/scp.ts',
-    'generated/overlay':      'src/generated/overlay.ts',
+    'generated/scp': 'src/generated/scp.ts',
+    'generated/overlay': 'src/generated/overlay.ts',
   },
   format: 'esm',
   dts: true,
@@ -261,6 +260,7 @@ and TypeScript code generator. It replaces the Ruby `xdrgen` gem.
 ### Source: stellar/stellar-xdr (curr branch)
 
 13 `.x` files, fetched at codegen time:
+
 - `Stellar-types.x` — Hash, uint32, int64, PublicKey, etc.
 - `Stellar-SCP.x` — consensus ballot types
 - `Stellar-contract.x` — SCVal, SCAddress, SCError (Soroban)
@@ -279,13 +279,13 @@ and TypeScript code generator. It replaces the Ruby `xdrgen` gem.
 
 The generator maps each `.x` file to an output file:
 
-| .x files | Output file |
-|---|---|
-| `Stellar-transaction.x` + `Stellar-types.x` | `transaction.ts` |
-| `Stellar-contract.x` + `Stellar-contract-spec.x` + `Stellar-contract-env-meta.x` + `Stellar-contract-meta.x` + `Stellar-contract-config-setting.x` | `contract.ts` |
-| `Stellar-ledger-entries.x` (assets, accounts, trustlines) | `asset.ts` + `ledger-entries.ts` |
-| `Stellar-SCP.x` | `scp.ts` |
-| `Stellar-overlay.x` | `overlay.ts` |
+| .x files                                                                                                                                           | Output file                      |
+| -------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| `Stellar-transaction.x` + `Stellar-types.x`                                                                                                        | `transaction.ts`                 |
+| `Stellar-contract.x` + `Stellar-contract-spec.x` + `Stellar-contract-env-meta.x` + `Stellar-contract-meta.x` + `Stellar-contract-config-setting.x` | `contract.ts`                    |
+| `Stellar-ledger-entries.x` (assets, accounts, trustlines)                                                                                          | `asset.ts` + `ledger-entries.ts` |
+| `Stellar-SCP.x`                                                                                                                                    | `scp.ts`                         |
+| `Stellar-overlay.x`                                                                                                                                | `overlay.ts`                     |
 
 ---
 
@@ -300,6 +300,7 @@ Use **vitest** with TypeScript.
 4. **Compat tests**: verify our encoded output matches known-good XDR from the current SDK
 
 Real XDR test vectors sourced from:
+
 - Stellar testnet/mainnet transactions
 - The existing `js-stellar-base` test suite (port the relevant XDR round-trip tests)
 
@@ -307,17 +308,17 @@ Real XDR test vectors sourced from:
 
 ## Why Not Just Port js-xdr?
 
-| Problem | js-xdr approach | Our approach |
-|---|---|---|
-| Code generation | Ruby gem (xdrgen) | TypeScript script |
-| Type representation | Runtime OOP classes | Compiled TS interfaces |
-| Encode/decode | Class static methods | Pure named functions |
-| Bundle size | Monolithic 354 KB file | Split by domain, tree-shakable |
-| TypeScript | Separate dts-xdr repo | Native TypeScript source |
-| Dependencies | Buffer polyfill (browser) | DataView (zero deps) |
-| ESM | "module" field only | Proper "exports" field |
-| int64 | LargeInt wrapper class | Native bigint |
-| Error messages | Cryptic XDR errors | Clear type-safe errors |
+| Problem             | js-xdr approach           | Our approach                   |
+| ------------------- | ------------------------- | ------------------------------ |
+| Code generation     | Ruby gem (xdrgen)         | TypeScript script              |
+| Type representation | Runtime OOP classes       | Compiled TS interfaces         |
+| Encode/decode       | Class static methods      | Pure named functions           |
+| Bundle size         | Monolithic 354 KB file    | Split by domain, tree-shakable |
+| TypeScript          | Separate dts-xdr repo     | Native TypeScript source       |
+| Dependencies        | Buffer polyfill (browser) | DataView (zero deps)           |
+| ESM                 | "module" field only       | Proper "exports" field         |
+| int64               | LargeInt wrapper class    | Native bigint                  |
+| Error messages      | Cryptic XDR errors        | Clear type-safe errors         |
 
 ---
 

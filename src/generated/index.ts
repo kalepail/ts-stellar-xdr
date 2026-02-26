@@ -1,5 +1,7 @@
 // AUTO-GENERATED — do not edit manually
 // Run: bun scripts/codegen/index.ts
+// Channel: curr
+// Ref: v25.0
 
 export * from './types.js'
 export * from './scp.js'

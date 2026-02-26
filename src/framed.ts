@@ -10,7 +10,7 @@ import {
 } from './codec.js'
 
 const FRAME_LAST_FRAGMENT_MASK = 0x80000000
-const FRAME_LENGTH_MASK = 0x7FFFFFFF
+const FRAME_LENGTH_MASK = 0x7fffffff
 
 /**
  * Encode an XDR value using RFC5531 record marking.
@@ -21,10 +21,7 @@ const FRAME_LENGTH_MASK = 0x7FFFFFFF
  * - high bit: last-fragment marker
  * - fragment payload bytes
  */
-export function encodeFramed<T>(
-  value: T,
-  writeFn: (w: XdrWriter, value: T) => void,
-): Uint8Array {
+export function encodeFramed<T>(value: T, writeFn: (w: XdrWriter, value: T) => void): Uint8Array {
   const payload = encode(value, writeFn)
   if (payload.length > FRAME_LENGTH_MASK) {
     throw new XdrWriteError(

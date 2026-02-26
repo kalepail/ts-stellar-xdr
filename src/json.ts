@@ -7,7 +7,7 @@
  * byte-level ASCII escaping.
  */
 
-const MASK64 = 0xFFFFFFFFFFFFFFFFn
+const MASK64 = 0xffffffffffffffffn
 const MIN_I128 = -(1n << 127n)
 const MAX_I128 = (1n << 127n) - 1n
 const MAX_U128 = (1n << 128n) - 1n
@@ -18,8 +18,8 @@ const MIN_I64 = -(1n << 63n)
 const MAX_I64 = (1n << 63n) - 1n
 const MAX_U64 = (1n << 64n) - 1n
 const MIN_I32 = -0x80000000
-const MAX_I32 = 0x7FFFFFFF
-const MAX_U32 = 0xFFFFFFFF
+const MAX_I32 = 0x7fffffff
+const MAX_U32 = 0xffffffff
 
 function assertRange(name: string, value: bigint, min: bigint, max: bigint): void {
   if (value < min || value > max) {
@@ -64,7 +64,10 @@ export function decimalToUint128Parts(s: string | number): [hi: bigint, lo: bigi
 // ---------------------------------------------------------------------------
 
 export function int256PartsToDecimal(
-  hiHi: bigint, hiLo: bigint, loHi: bigint, loLo: bigint,
+  hiHi: bigint,
+  hiLo: bigint,
+  loHi: bigint,
+  loLo: bigint,
 ): string {
   return (
     (hiHi << 192n) |
@@ -92,7 +95,10 @@ export function decimalToInt256Parts(
 // ---------------------------------------------------------------------------
 
 export function uint256PartsToDecimal(
-  hiHi: bigint, hiLo: bigint, loHi: bigint, loLo: bigint,
+  hiHi: bigint,
+  hiLo: bigint,
+  loHi: bigint,
+  loLo: bigint,
 ): string {
   return ((hiHi << 192n) | (hiLo << 128n) | (loHi << 64n) | loLo).toString()
 }
@@ -102,12 +108,7 @@ export function decimalToUint256Parts(
 ): [hiHi: bigint, hiLo: bigint, loHi: bigint, loLo: bigint] {
   const v = BigInt(s)
   assertRange('UInt256Parts', v, 0n, MAX_U256)
-  return [
-    (v >> 192n) & MASK64,
-    (v >> 128n) & MASK64,
-    (v >> 64n) & MASK64,
-    v & MASK64,
-  ]
+  return [(v >> 192n) & MASK64, (v >> 128n) & MASK64, (v >> 64n) & MASK64, v & MASK64]
 }
 
 // ---------------------------------------------------------------------------
@@ -133,13 +134,23 @@ function escapeBytesToAscii(bytes: Uint8Array): string {
   let result = ''
   for (const b of bytes) {
     switch (b) {
-      case 0x00: result += '\\0'; break
-      case 0x09: result += '\\t'; break
-      case 0x0A: result += '\\n'; break
-      case 0x0D: result += '\\r'; break
-      case 0x5C: result += '\\\\'; break
+      case 0x00:
+        result += '\\0'
+        break
+      case 0x09:
+        result += '\\t'
+        break
+      case 0x0a:
+        result += '\\n'
+        break
+      case 0x0d:
+        result += '\\r'
+        break
+      case 0x5c:
+        result += '\\\\'
+        break
       default:
-        if (b >= 0x20 && b <= 0x7E) {
+        if (b >= 0x20 && b <= 0x7e) {
           result += String.fromCharCode(b)
         } else {
           result += `\\x${b.toString(16).padStart(2, '0')}`
@@ -167,7 +178,7 @@ function unescapeAsciiToBytes(s: string): Uint8Array {
   for (let i = 0; i < source.length; i++) {
     const b = source[i]!
 
-    if (b !== 0x5C) {
+    if (b !== 0x5c) {
       bytes.push(b)
       continue
     }
@@ -184,16 +195,17 @@ function unescapeAsciiToBytes(s: string): Uint8Array {
       case 0x74: // t
         bytes.push(0x09)
         break
-      case 0x6E: // n
-        bytes.push(0x0A)
+      case 0x6e: // n
+        bytes.push(0x0a)
         break
       case 0x72: // r
-        bytes.push(0x0D)
+        bytes.push(0x0d)
         break
-      case 0x5C: // \
-        bytes.push(0x5C)
+      case 0x5c: // \
+        bytes.push(0x5c)
         break
-      case 0x78: { // x
+      case 0x78: {
+        // x
         if (i + 2 >= source.length) {
           throw new Error('Invalid \\x escape sequence: expected two hex digits')
         }
@@ -294,7 +306,7 @@ function jsonTypeOf(value: unknown): string {
 }
 
 export function parseJsonObject(json: unknown): Record<string, unknown> {
-  if (json == null || typeof json !== 'object' || Array.isArray(json)) {
+  if (json === null || typeof json !== 'object' || Array.isArray(json)) {
     throw new Error(`Expected JSON object, got ${jsonTypeOf(json)}`)
   }
   return json as Record<string, unknown>

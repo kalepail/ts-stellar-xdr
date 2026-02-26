@@ -12,8 +12,5 @@
     "prefer-const": "error",
     "no-throw-literal": "error"
   },
-  "ignorePatterns": [
-    "src/generated/**",
-    "dist/**"
-  ]
+  "ignorePatterns": ["src/generated/**", "dist/**"]
 }

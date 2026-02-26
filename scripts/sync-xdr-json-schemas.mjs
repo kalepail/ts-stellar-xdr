@@ -38,9 +38,7 @@ const results = await Promise.allSettled(
   }),
 )
 
-const failures = results
-  .map((r, i) => ({ r, i }))
-  .filter((x) => x.r.status === 'rejected')
+const failures = results.map((r, i) => ({ r, i })).filter((x) => x.r.status === 'rejected')
 
 if (failures.length > 0) {
   for (const failure of failures) {

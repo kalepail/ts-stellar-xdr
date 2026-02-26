@@ -100,15 +100,11 @@ import {
   toJsonSequenceNumber,
   fromJsonSequenceNumber,
 } from '../src/generated/ledger-entries.js'
-import { bytesToHex, hexToBytes } from '../src/codec.js'
+import { bytesToHex } from '../src/codec.js'
 import {
   encodeSignedPayload,
   decodeSignedPayload,
   encodeEd25519PublicKey,
-  encodeContract,
-  encodeMuxedAccountStrKey,
-  encodeClaimableBalance,
-  encodeLiquidityPool,
   encodeSha256Hash,
 } from '../src/strkey.js'
 
@@ -145,26 +141,28 @@ describe('Int128Parts ↔ decimal', () => {
     const decimal = '-1'
     const [hi, lo] = decimalToInt128Parts(decimal)
     expect(hi).toBe(-1n)
-    expect(lo).toBe(0xFFFFFFFFFFFFFFFFn)
+    expect(lo).toBe(0xffffffffffffffffn)
     expect(int128PartsToDecimal(hi, lo)).toBe(decimal)
   })
 
   // rs-stellar-xdr str.rs boundary values
   it('converts max int128 (rs-stellar-xdr vector)', () => {
-    expect(int128PartsToDecimal(0x7FFFFFFFFFFFFFFFn, 0xFFFFFFFFFFFFFFFFn))
-      .toBe('170141183460469231731687303715884105727')
+    expect(int128PartsToDecimal(0x7fffffffffffffffn, 0xffffffffffffffffn)).toBe(
+      '170141183460469231731687303715884105727',
+    )
   })
 
   it('converts min int128 (rs-stellar-xdr vector)', () => {
-    expect(int128PartsToDecimal(-0x8000000000000000n, 0n))
-      .toBe('-170141183460469231731687303715884105728')
+    expect(int128PartsToDecimal(-0x8000000000000000n, 0n)).toBe(
+      '-170141183460469231731687303715884105728',
+    )
   })
 
   it('roundtrips max int128', () => {
     const max = '170141183460469231731687303715884105727'
     const [hi, lo] = decimalToInt128Parts(max)
-    expect(hi).toBe(0x7FFFFFFFFFFFFFFFn)
-    expect(lo).toBe(0xFFFFFFFFFFFFFFFFn)
+    expect(hi).toBe(0x7fffffffffffffffn)
+    expect(lo).toBe(0xffffffffffffffffn)
     expect(int128PartsToDecimal(hi, lo)).toBe(max)
   })
 
@@ -186,8 +184,9 @@ describe('UInt128Parts ↔ decimal', () => {
 
   // rs-stellar-xdr str.rs exact vector
   it('max uint128 matches rs-stellar-xdr value', () => {
-    expect(uint128PartsToDecimal(0xFFFFFFFFFFFFFFFFn, 0xFFFFFFFFFFFFFFFFn))
-      .toBe('340282366920938463463374607431768211455')
+    expect(uint128PartsToDecimal(0xffffffffffffffffn, 0xffffffffffffffffn)).toBe(
+      '340282366920938463463374607431768211455',
+    )
   })
 
   it('converts 1', () => {
@@ -213,15 +212,20 @@ describe('Int256Parts ↔ decimal', () => {
 
   // rs-stellar-xdr str.rs exact vectors
   it('converts max int256 (rs-stellar-xdr vector)', () => {
-    expect(int256PartsToDecimal(
-      0x7FFFFFFFFFFFFFFFn, 0xFFFFFFFFFFFFFFFFn,
-      0xFFFFFFFFFFFFFFFFn, 0xFFFFFFFFFFFFFFFFn,
-    )).toBe('57896044618658097711785492504343953926634992332820282019728792003956564819967')
+    expect(
+      int256PartsToDecimal(
+        0x7fffffffffffffffn,
+        0xffffffffffffffffn,
+        0xffffffffffffffffn,
+        0xffffffffffffffffn,
+      ),
+    ).toBe('57896044618658097711785492504343953926634992332820282019728792003956564819967')
   })
 
   it('converts min int256 (rs-stellar-xdr vector)', () => {
-    expect(int256PartsToDecimal(-0x8000000000000000n, 0n, 0n, 0n))
-      .toBe('-57896044618658097711785492504343953926634992332820282019728792003956564819968')
+    expect(int256PartsToDecimal(-0x8000000000000000n, 0n, 0n, 0n)).toBe(
+      '-57896044618658097711785492504343953926634992332820282019728792003956564819968',
+    )
   })
 
   it('roundtrips max int256', () => {
@@ -246,10 +250,14 @@ describe('UInt256Parts ↔ decimal', () => {
 
   // rs-stellar-xdr str.rs exact vector
   it('max uint256 matches rs-stellar-xdr value', () => {
-    expect(uint256PartsToDecimal(
-      0xFFFFFFFFFFFFFFFFn, 0xFFFFFFFFFFFFFFFFn,
-      0xFFFFFFFFFFFFFFFFn, 0xFFFFFFFFFFFFFFFFn,
-    )).toBe('115792089237316195423570985008687907853269984665640564039457584007913129639935')
+    expect(
+      uint256PartsToDecimal(
+        0xffffffffffffffffn,
+        0xffffffffffffffffn,
+        0xffffffffffffffffn,
+        0xffffffffffffffffn,
+      ),
+    ).toBe('115792089237316195423570985008687907853269984665640564039457584007913129639935')
   })
 
   it('converts 1', () => {
@@ -271,7 +279,9 @@ describe('AssetCode escape/unescape', () => {
   it('escapeAssetCode12 keeps at least 5 bytes', () => {
     // "ABC" in 12-byte code → keeps 5 bytes (3 content + 2 null)
     const bytes = new Uint8Array(12)
-    bytes[0] = 0x41; bytes[1] = 0x42; bytes[2] = 0x43 // ABC
+    bytes[0] = 0x41
+    bytes[1] = 0x42
+    bytes[2] = 0x43 // ABC
     expect(escapeAssetCode12(bytes)).toBe('ABC\\0\\0')
   })
 
@@ -610,14 +620,15 @@ describe('AssetCode JSON', () => {
 
   it('serializes AssetCode12 as escaped string', () => {
     const code = new Uint8Array(12)
-    new TextEncoder().encode('VERYLONG').forEach((b, i) => code[i] = b)
+    new TextEncoder().encode('VERYLONG').forEach((b, i) => (code[i] = b))
     expect(toJsonAssetCode12(code)).toBe('VERYLONG')
   })
 
   it('serializes short AssetCode12 with null padding to 5 chars', () => {
     // "AB" in 12 bytes → must produce at least 5 encoded chars
     const code = new Uint8Array(12)
-    code[0] = 0x41; code[1] = 0x42 // AB
+    code[0] = 0x41
+    code[1] = 0x42 // AB
     expect(toJsonAssetCode12(code)).toBe('AB\\0\\0\\0')
   })
 
@@ -652,7 +663,7 @@ describe('AssetCode JSON', () => {
 
   it('serializes AssetCode union (12-char)', () => {
     const code = new Uint8Array(12)
-    new TextEncoder().encode('LONGASSET').forEach((b, i) => code[i] = b)
+    new TextEncoder().encode('LONGASSET').forEach((b, i) => (code[i] = b))
     const assetCode = {
       type: 'ASSET_TYPE_CREDIT_ALPHANUM12' as const,
       assetCode12: code,
@@ -772,7 +783,7 @@ describe('Int256Parts JSON', () => {
 
 describe('UInt256Parts JSON', () => {
   it('roundtrips max', () => {
-    const maxU64 = 0xFFFFFFFFFFFFFFFFn
+    const maxU64 = 0xffffffffffffffffn
     const parts = { hi_hi: maxU64, hi_lo: maxU64, lo_hi: maxU64, lo_lo: maxU64 }
     const json = toJsonUInt256Parts(parts)
     const result = fromJsonUInt256Parts(json)
@@ -829,12 +840,12 @@ describe('Full roundtrip: encode → toJson → fromJson → verify', () => {
   })
 
   it('Int128Parts roundtrips through decimal', () => {
-    const original = { hi: -1n, lo: 0xFFFFFFFFFFFFFFFFn }
+    const original = { hi: -1n, lo: 0xffffffffffffffffn }
     const json = toJsonInt128Parts(original)
     expect(json).toBe('-1')
     const restored = fromJsonInt128Parts(json)
     expect(restored.hi).toBe(-1n)
-    expect(restored.lo).toBe(0xFFFFFFFFFFFFFFFFn)
+    expect(restored.lo).toBe(0xffffffffffffffffn)
   })
 })
 
@@ -983,22 +994,16 @@ describe('$schema property filtering', () => {
 describe('TransactionEnvelope JSON roundtrip', () => {
   // Constructed from the exact values in rs-stellar-xdr tests/serde_tx.rs
   const sourceBytes = new Uint8Array([
-    0x3c, 0xb3, 0x61, 0xab, 0x62, 0x4b, 0x10, 0x70,
-    0x4c, 0x6c, 0xcf, 0x4f, 0xdb, 0x1e, 0x40, 0x79,
-    0xd2, 0x3d, 0x68, 0xec, 0x2c, 0xd3, 0x22, 0xc2,
-    0x28, 0x34, 0xc4, 0x1a, 0xe1, 0xe6, 0x4b, 0xd3,
+    0x3c, 0xb3, 0x61, 0xab, 0x62, 0x4b, 0x10, 0x70, 0x4c, 0x6c, 0xcf, 0x4f, 0xdb, 0x1e, 0x40, 0x79,
+    0xd2, 0x3d, 0x68, 0xec, 0x2c, 0xd3, 0x22, 0xc2, 0x28, 0x34, 0xc4, 0x1a, 0xe1, 0xe6, 0x4b, 0xd3,
   ])
   const opSourceBytes = new Uint8Array([
-    0x9b, 0x9f, 0xfa, 0xba, 0xcf, 0x46, 0x65, 0xb3,
-    0x57, 0x29, 0x76, 0xfb, 0x85, 0x09, 0x79, 0xcb,
-    0xc7, 0x6b, 0x9d, 0x67, 0x9c, 0x6b, 0xca, 0xeb,
-    0xd5, 0x9b, 0xbf, 0xb3, 0x43, 0xe8, 0xe9, 0x46,
+    0x9b, 0x9f, 0xfa, 0xba, 0xcf, 0x46, 0x65, 0xb3, 0x57, 0x29, 0x76, 0xfb, 0x85, 0x09, 0x79, 0xcb,
+    0xc7, 0x6b, 0x9d, 0x67, 0x9c, 0x6b, 0xca, 0xeb, 0xd5, 0x9b, 0xbf, 0xb3, 0x43, 0xe8, 0xe9, 0x46,
   ])
   const issuerBytes = new Uint8Array([
-    0x43, 0xd0, 0x9f, 0x49, 0x2a, 0x2a, 0xe3, 0xaa,
-    0x0a, 0xed, 0x8e, 0xce, 0xdc, 0xb2, 0x26, 0xa4,
-    0xf7, 0x50, 0xa9, 0x0e, 0xcb, 0x4e, 0x09, 0xf9,
-    0xac, 0x76, 0x4a, 0x55, 0x37, 0xca, 0xd8, 0x77,
+    0x43, 0xd0, 0x9f, 0x49, 0x2a, 0x2a, 0xe3, 0xaa, 0x0a, 0xed, 0x8e, 0xce, 0xdc, 0xb2, 0x26, 0xa4,
+    0xf7, 0x50, 0xa9, 0x0e, 0xcb, 0x4e, 0x09, 0xf9, 0xac, 0x76, 0x4a, 0x55, 0x37, 0xca, 0xd8, 0x77,
   ])
 
   const envelope: TransactionEnvelope = {
@@ -1010,25 +1015,27 @@ describe('TransactionEnvelope JSON roundtrip', () => {
         seqNum: 1n,
         cond: { type: 'PRECOND_NONE' },
         memo: { type: 'MEMO_TEXT', text: 'Stellar' },
-        operations: [{
-          sourceAccount: { type: 'KEY_TYPE_ED25519', ed25519: opSourceBytes },
-          body: {
-            type: 'CHANGE_TRUST',
-            changeTrustOp: {
-              line: {
-                type: 'ASSET_TYPE_CREDIT_ALPHANUM4',
-                alphaNum4: {
-                  assetCode: new Uint8Array([0x41, 0x42, 0x43, 0x44]), // "ABCD"
-                  issuer: {
-                    type: 'PUBLIC_KEY_TYPE_ED25519',
-                    ed25519: issuerBytes,
+        operations: [
+          {
+            sourceAccount: { type: 'KEY_TYPE_ED25519', ed25519: opSourceBytes },
+            body: {
+              type: 'CHANGE_TRUST',
+              changeTrustOp: {
+                line: {
+                  type: 'ASSET_TYPE_CREDIT_ALPHANUM4',
+                  alphaNum4: {
+                    assetCode: new Uint8Array([0x41, 0x42, 0x43, 0x44]), // "ABCD"
+                    issuer: {
+                      type: 'PUBLIC_KEY_TYPE_ED25519',
+                      ed25519: issuerBytes,
+                    },
                   },
                 },
+                limit: 9223372036854775807n, // i64::MAX
               },
-              limit: 9223372036854775807n, // i64::MAX
             },
           },
-        }],
+        ],
         ext: { v: 0 },
       },
       signatures: [],
@@ -1061,7 +1068,9 @@ describe('TransactionEnvelope JSON roundtrip', () => {
     // ChangeTrustAsset union
     expect(ct.line).toHaveProperty('credit_alphanum4')
     expect(ct.line.credit_alphanum4.asset_code).toBe('ABCD')
-    expect(ct.line.credit_alphanum4.issuer).toBe('GBB5BH2JFIVOHKQK5WHM5XFSE2SPOUFJB3FU4CPZVR3EUVJXZLMHOLOM')
+    expect(ct.line.credit_alphanum4.issuer).toBe(
+      'GBB5BH2JFIVOHKQK5WHM5XFSE2SPOUFJB3FU4CPZVR3EUVJXZLMHOLOM',
+    )
     // int64 limit as string
     expect(ct.limit).toBe('9223372036854775807')
     // TransactionExt void arm
@@ -1096,7 +1105,8 @@ describe('TransactionEnvelope JSON roundtrip', () => {
 
 describe('SCAddress JSON (StrKey)', () => {
   const keyBytes = new Uint8Array(32)
-  keyBytes[0] = 0x3f; keyBytes[1] = 0x0c
+  keyBytes[0] = 0x3f
+  keyBytes[1] = 0x0c
 
   it('serializes Account as G-address', () => {
     const addr = {
@@ -1285,7 +1295,9 @@ describe('SignerKey JSON (StrKey)', () => {
 
 describe('ClaimableBalanceID JSON (StrKey)', () => {
   const hash = new Uint8Array(32)
-  hash[0] = 0x36; hash[1] = 0x3e; hash[31] = 0xab
+  hash[0] = 0x36
+  hash[1] = 0x3e
+  hash[31] = 0xab
 
   it('serializes as B-address string', () => {
     const cbid = { type: 'CLAIMABLE_BALANCE_ID_TYPE_V0' as const, v0: hash }
@@ -1309,7 +1321,9 @@ describe('ClaimableBalanceID JSON (StrKey)', () => {
 
 describe('PoolID JSON (StrKey)', () => {
   const hash = new Uint8Array(32)
-  hash[0] = 0x36; hash[1] = 0x3e; hash[31] = 0xcd
+  hash[0] = 0x36
+  hash[1] = 0x3e
+  hash[31] = 0xcd
 
   it('serializes as L-address string', () => {
     const json = toJsonPoolID(hash)
@@ -1408,7 +1422,12 @@ describe('64-bit integers in arrays', () => {
     }
     const json = toJsonConfigSettingEntry(original)
     const restored = fromJsonConfigSettingEntry(json)
-    expect((restored as any).liveSorobanStateSizeWindow).toEqual([1n, 2n, 3n, 18446744073709551615n])
+    expect((restored as any).liveSorobanStateSizeWindow).toEqual([
+      1n,
+      2n,
+      3n,
+      18446744073709551615n,
+    ])
   })
 })
 
@@ -1465,7 +1484,8 @@ describe('Negative 64-bit integers in JSON', () => {
 
 describe('Asset union JSON', () => {
   const issuerBytes = new Uint8Array(32)
-  issuerBytes[0] = 0x43; issuerBytes[1] = 0xd0
+  issuerBytes[0] = 0x43
+  issuerBytes[1] = 0xd0
 
   it('serializes native as bare string', () => {
     const asset = { type: 'ASSET_TYPE_NATIVE' as const }
@@ -1488,7 +1508,7 @@ describe('Asset union JSON', () => {
 
   it('serializes CreditAlphanum12 as nested object', () => {
     const code12 = new Uint8Array(12)
-    new TextEncoder().encode('LONGASSET').forEach((b, i) => code12[i] = b)
+    new TextEncoder().encode('LONGASSET').forEach((b, i) => (code12[i] = b))
     const asset = {
       type: 'ASSET_TYPE_CREDIT_ALPHANUM12' as const,
       alphaNum12: {
@@ -1545,7 +1565,8 @@ describe('Asset union JSON', () => {
 describe('JSON.stringify/parse roundtrip for complex types', () => {
   it('TransactionEnvelope survives JSON.stringify/parse', () => {
     const sourceBytes = new Uint8Array(32)
-    sourceBytes[0] = 0x3c; sourceBytes[1] = 0xb3
+    sourceBytes[0] = 0x3c
+    sourceBytes[1] = 0xb3
     const envelope: TransactionEnvelope = {
       type: 'ENVELOPE_TYPE_TX',
       v1: {
@@ -1654,6 +1675,8 @@ describe('SCAddress fromJson rejects invalid types', () => {
 
   it('rejects S (secret seed) address', () => {
     // Secret seed starts with S but is not a valid SCAddress variant
-    expect(() => fromJsonSCAddress('SAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVNPT')).toThrow()
+    expect(() =>
+      fromJsonSCAddress('SAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVNPT'),
+    ).toThrow()
   })
 })

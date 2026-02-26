@@ -216,7 +216,8 @@ const textDecoder = /*#__PURE__*/ new TextDecoder('utf-8', { fatal: true })
 // ---------------------------------------------------------------------------
 
 export function readInt32(r: XdrReader): number {
-  if (r.pos + 4 > r.buf.length) throw new XdrReadError('Unexpected end of XDR input (int32)', 'BUFFER_UNDERFLOW')
+  if (r.pos + 4 > r.buf.length)
+    throw new XdrReadError('Unexpected end of XDR input (int32)', 'BUFFER_UNDERFLOW')
   consumeBytes(r, 4)
   const v = r.view.getInt32(r.pos, false)
   r.pos += 4
@@ -224,7 +225,8 @@ export function readInt32(r: XdrReader): number {
 }
 
 export function readUint32(r: XdrReader): number {
-  if (r.pos + 4 > r.buf.length) throw new XdrReadError('Unexpected end of XDR input (uint32)', 'BUFFER_UNDERFLOW')
+  if (r.pos + 4 > r.buf.length)
+    throw new XdrReadError('Unexpected end of XDR input (uint32)', 'BUFFER_UNDERFLOW')
   consumeBytes(r, 4)
   const v = r.view.getUint32(r.pos, false)
   r.pos += 4
@@ -232,7 +234,8 @@ export function readUint32(r: XdrReader): number {
 }
 
 export function readInt64(r: XdrReader): bigint {
-  if (r.pos + 8 > r.buf.length) throw new XdrReadError('Unexpected end of XDR input (int64)', 'BUFFER_UNDERFLOW')
+  if (r.pos + 8 > r.buf.length)
+    throw new XdrReadError('Unexpected end of XDR input (int64)', 'BUFFER_UNDERFLOW')
   consumeBytes(r, 8)
   const v = r.view.getBigInt64(r.pos, false)
   r.pos += 8
@@ -240,7 +243,8 @@ export function readInt64(r: XdrReader): bigint {
 }
 
 export function readUint64(r: XdrReader): bigint {
-  if (r.pos + 8 > r.buf.length) throw new XdrReadError('Unexpected end of XDR input (uint64)', 'BUFFER_UNDERFLOW')
+  if (r.pos + 8 > r.buf.length)
+    throw new XdrReadError('Unexpected end of XDR input (uint64)', 'BUFFER_UNDERFLOW')
   consumeBytes(r, 8)
   const v = r.view.getBigUint64(r.pos, false)
   r.pos += 8
@@ -254,7 +258,8 @@ export function readBool(r: XdrReader): boolean {
 }
 
 export function readFloat(r: XdrReader): number {
-  if (r.pos + 4 > r.buf.length) throw new XdrReadError('Unexpected end of XDR input (float)', 'BUFFER_UNDERFLOW')
+  if (r.pos + 4 > r.buf.length)
+    throw new XdrReadError('Unexpected end of XDR input (float)', 'BUFFER_UNDERFLOW')
   consumeBytes(r, 4)
   const v = r.view.getFloat32(r.pos, false)
   r.pos += 4
@@ -262,7 +267,8 @@ export function readFloat(r: XdrReader): number {
 }
 
 export function readDouble(r: XdrReader): number {
-  if (r.pos + 8 > r.buf.length) throw new XdrReadError('Unexpected end of XDR input (double)', 'BUFFER_UNDERFLOW')
+  if (r.pos + 8 > r.buf.length)
+    throw new XdrReadError('Unexpected end of XDR input (double)', 'BUFFER_UNDERFLOW')
   consumeBytes(r, 8)
   const v = r.view.getFloat64(r.pos, false)
   r.pos += 8
@@ -281,7 +287,10 @@ export function readDouble(r: XdrReader): number {
 export function readFixedOpaque(r: XdrReader, len: number): Uint8Array {
   const pad = padLen(len)
   if (r.pos + len + pad > r.buf.length) {
-    throw new XdrReadError(`Unexpected end of XDR input (fixed opaque, len=${len})`, 'BUFFER_UNDERFLOW')
+    throw new XdrReadError(
+      `Unexpected end of XDR input (fixed opaque, len=${len})`,
+      'BUFFER_UNDERFLOW',
+    )
   }
   consumeBytes(r, len + pad)
   const data = r.buf.slice(r.pos, r.pos + len)
@@ -289,7 +298,10 @@ export function readFixedOpaque(r: XdrReader, len: number): Uint8Array {
   // Validate padding bytes are zero
   for (let i = 0; i < pad; i++) {
     if (r.buf[r.pos + i] !== 0) {
-      throw new XdrReadError(`Non-zero XDR padding byte at position ${r.pos + i}`, 'NON_ZERO_PADDING')
+      throw new XdrReadError(
+        `Non-zero XDR padding byte at position ${r.pos + i}`,
+        'NON_ZERO_PADDING',
+      )
     }
   }
   r.pos += pad
@@ -303,7 +315,10 @@ export function readFixedOpaque(r: XdrReader, len: number): Uint8Array {
 export function readVarOpaque(r: XdrReader, maxLen: number): Uint8Array {
   const len = readUint32(r)
   if (len > maxLen) {
-    throw new XdrReadError(`XDR var-opaque length ${len} exceeds max ${maxLen}`, 'LENGTH_EXCEEDS_MAX')
+    throw new XdrReadError(
+      `XDR var-opaque length ${len} exceeds max ${maxLen}`,
+      'LENGTH_EXCEEDS_MAX',
+    )
   }
   return readFixedOpaque(r, len)
 }
@@ -414,7 +429,10 @@ export function writeFixedOpaque(w: XdrWriter, data: Uint8Array, len: number): v
  */
 export function writeVarOpaque(w: XdrWriter, data: Uint8Array, maxLen: number): void {
   if (data.length > maxLen) {
-    throw new XdrWriteError(`XDR var-opaque length ${data.length} exceeds max ${maxLen}`, 'LENGTH_EXCEEDS_MAX')
+    throw new XdrWriteError(
+      `XDR var-opaque length ${data.length} exceeds max ${maxLen}`,
+      'LENGTH_EXCEEDS_MAX',
+    )
   }
   writeUint32(w, data.length)
   writeFixedOpaque(w, data, data.length)
@@ -467,11 +485,7 @@ export function writeOptional<T>(
  * Read a fixed-length XDR array (T[N]).
  */
 export function readFixedArray<T>(r: XdrReader, len: number, readFn: (r: XdrReader) => T): T[] {
-  const result: T[] = new Array(len)
-  for (let i = 0; i < len; i++) {
-    result[i] = readFn(r)
-  }
-  return result
+  return Array.from({ length: len }, () => readFn(r))
 }
 
 /**
@@ -484,7 +498,10 @@ export function writeFixedArray<T>(
   writeFn: (w: XdrWriter, v: T) => void,
 ): void {
   if (arr.length !== len) {
-    throw new XdrWriteError(`XDR fixed array: expected ${len} elements, got ${arr.length}`, 'LENGTH_MISMATCH')
+    throw new XdrWriteError(
+      `XDR fixed array: expected ${len} elements, got ${arr.length}`,
+      'LENGTH_MISMATCH',
+    )
   }
   for (const item of arr) {
     writeFn(w, item)
@@ -497,17 +514,19 @@ export function writeFixedArray<T>(
 export function readVarArray<T>(r: XdrReader, maxLen: number, readFn: (r: XdrReader) => T): T[] {
   const len = readUint32(r)
   if (len > maxLen) {
-    throw new XdrReadError(`XDR var-array length ${len} exceeds max ${maxLen}`, 'LENGTH_EXCEEDS_MAX')
+    throw new XdrReadError(
+      `XDR var-array length ${len} exceeds max ${maxLen}`,
+      'LENGTH_EXCEEDS_MAX',
+    )
   }
   // Fast-fail: each element is at least 4 bytes, so len > remainingBytes / 4 is always invalid
   if (len > remainingBytes(r) / 4) {
-    throw new XdrReadError(`XDR var-array length ${len} exceeds remaining buffer`, 'BUFFER_UNDERFLOW')
+    throw new XdrReadError(
+      `XDR var-array length ${len} exceeds remaining buffer`,
+      'BUFFER_UNDERFLOW',
+    )
   }
-  const result: T[] = new Array(len)
-  for (let i = 0; i < len; i++) {
-    result[i] = readFn(r)
-  }
-  return result
+  return Array.from({ length: len }, () => readFn(r))
 }
 
 /**
@@ -520,7 +539,10 @@ export function writeVarArray<T>(
   writeFn: (w: XdrWriter, v: T) => void,
 ): void {
   if (arr.length > maxLen) {
-    throw new XdrWriteError(`XDR var-array length ${arr.length} exceeds max ${maxLen}`, 'LENGTH_EXCEEDS_MAX')
+    throw new XdrWriteError(
+      `XDR var-array length ${arr.length} exceeds max ${maxLen}`,
+      'LENGTH_EXCEEDS_MAX',
+    )
   }
   writeUint32(w, arr.length)
   for (const item of arr) {

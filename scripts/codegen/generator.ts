@@ -88,15 +88,66 @@ const UINT32_MAX = 0xffffffff`
  * use as a local variable (while keeping the property name in the struct).
  */
 const JS_RESERVED_WORDS = new Set([
-  'break', 'case', 'catch', 'class', 'const', 'continue', 'debugger',
-  'default', 'delete', 'do', 'else', 'export', 'extends', 'false',
-  'finally', 'for', 'function', 'if', 'import', 'in', 'instanceof',
-  'let', 'new', 'null', 'return', 'static', 'super', 'switch', 'this',
-  'throw', 'true', 'try', 'typeof', 'var', 'void', 'while', 'with',
-  'yield', 'enum', 'implements', 'interface', 'package', 'private',
-  'protected', 'public', 'abstract', 'as', 'async', 'await', 'declare',
-  'from', 'get', 'module', 'namespace', 'of', 'override', 'readonly',
-  'require', 'set', 'type',
+  'break',
+  'case',
+  'catch',
+  'class',
+  'const',
+  'continue',
+  'debugger',
+  'default',
+  'delete',
+  'do',
+  'else',
+  'export',
+  'extends',
+  'false',
+  'finally',
+  'for',
+  'function',
+  'if',
+  'import',
+  'in',
+  'instanceof',
+  'let',
+  'new',
+  'null',
+  'return',
+  'static',
+  'super',
+  'switch',
+  'this',
+  'throw',
+  'true',
+  'try',
+  'typeof',
+  'var',
+  'void',
+  'while',
+  'with',
+  'yield',
+  'enum',
+  'implements',
+  'interface',
+  'package',
+  'private',
+  'protected',
+  'public',
+  'abstract',
+  'as',
+  'async',
+  'await',
+  'declare',
+  'from',
+  'get',
+  'module',
+  'namespace',
+  'of',
+  'override',
+  'readonly',
+  'require',
+  'set',
+  'type',
 ])
 
 /**
@@ -157,19 +208,6 @@ function toScreamingSnake(name: string): string {
 // ---------------------------------------------------------------------------
 
 /**
- * Types with custom JSON serialization (matching rs-stellar-xdr custom_str_impl).
- * These types serialize to a single string instead of their default struct/union form.
- */
-const CUSTOM_JSON_TYPES = new Set([
-  'PublicKey', 'MuxedAccount', 'AssetCode',
-  'AssetCode4', 'AssetCode12', 'ContractID',
-  'Int128Parts', 'UInt128Parts', 'Int256Parts', 'UInt256Parts',
-  'SignerKey', 'SignerKey_ed25519SignedPayload',
-  'SCAddress', 'ClaimableBalanceID', 'PoolID',
-  'MuxedAccount_med25519', 'MuxedEd25519Account',
-])
-
-/**
  * Module-level registry: enum type name → common member prefix.
  * Computed by index.ts before generation starts.
  */
@@ -186,13 +224,13 @@ export function setEnumPrefixMap(map: Map<string, string>): void {
  */
 export function computeEnumPrefix(members: string[]): string {
   if (members.length < 2) return ''
-  const wordArrays = members.map(m => m.split('_'))
-  const minLen = Math.min(...wordArrays.map(a => a.length))
+  const wordArrays = members.map((m) => m.split('_'))
+  const minLen = Math.min(...wordArrays.map((a) => a.length))
 
   let prefixLen = 0
   for (let i = 0; i < minLen; i++) {
     const word = wordArrays[0]![i]
-    if (wordArrays.every(arr => arr[i] === word)) {
+    if (wordArrays.every((arr) => arr[i] === word)) {
       prefixLen = i + 1
     } else {
       break
@@ -437,11 +475,16 @@ function readLambda(ref: XdrTypeRef, readerVar = 'r'): string {
   }
   if (ref.kind === 'primitive') {
     switch (ref.primitive) {
-      case 'int':          return 'readInt32'
-      case 'unsigned int': return 'readUint32'
-      case 'hyper':        return 'readInt64'
-      case 'unsigned hyper': return 'readUint64'
-      case 'bool':         return 'readBool'
+      case 'int':
+        return 'readInt32'
+      case 'unsigned int':
+        return 'readUint32'
+      case 'hyper':
+        return 'readInt64'
+      case 'unsigned hyper':
+        return 'readUint64'
+      case 'bool':
+        return 'readBool'
     }
   }
   // For complex types, generate a lambda
@@ -510,11 +553,16 @@ function writeLambda(ref: XdrTypeRef, writerVar = 'w'): string {
   }
   if (ref.kind === 'primitive') {
     switch (ref.primitive) {
-      case 'int':            return 'writeInt32'
-      case 'unsigned int':   return 'writeUint32'
-      case 'hyper':          return 'writeInt64'
-      case 'unsigned hyper': return 'writeUint64'
-      case 'bool':           return 'writeBool'
+      case 'int':
+        return 'writeInt32'
+      case 'unsigned int':
+        return 'writeUint32'
+      case 'hyper':
+        return 'writeInt64'
+      case 'unsigned hyper':
+        return 'writeUint64'
+      case 'bool':
+        return 'writeBool'
     }
   }
   // For complex types, generate a lambda
@@ -587,7 +635,9 @@ function generateTypedef(def: XdrTypedef): string {
   lines.push(`  return encode(v, ${writeFn})`)
   lines.push(`}`)
   lines.push('')
-  lines.push(`export function ${toDecodeFnName(def.name)}(input: Uint8Array | string): ${def.name} {`)
+  lines.push(
+    `export function ${toDecodeFnName(def.name)}(input: Uint8Array | string): ${def.name} {`,
+  )
   lines.push(`  return decode(input, ${readFn})`)
   lines.push(`}`)
   lines.push('')
@@ -701,7 +751,9 @@ function generateEnum(def: XdrEnum): string {
   lines.push(`export function ${readFn}(r: XdrReader): ${def.name} {`)
   lines.push(`  const v = readInt32(r)`)
   lines.push(`  const result = ${prefix}_FROM_INT[v]`)
-  lines.push(`  if (result === undefined) throw new XdrReadError(\`Unknown ${def.name} value: \${v}\`, 'INVALID_ENUM_VALUE')`)
+  lines.push(
+    `  if (result === undefined) throw new XdrReadError(\`Unknown ${def.name} value: \${v}\`, 'INVALID_ENUM_VALUE')`,
+  )
   lines.push(`  return result`)
   lines.push(`}`)
   lines.push('')
@@ -717,7 +769,9 @@ function generateEnum(def: XdrEnum): string {
   lines.push(`  return encode(v, ${writeFn})`)
   lines.push(`}`)
   lines.push('')
-  lines.push(`export function ${toDecodeFnName(def.name)}(input: Uint8Array | string): ${def.name} {`)
+  lines.push(
+    `export function ${toDecodeFnName(def.name)}(input: Uint8Array | string): ${def.name} {`,
+  )
   lines.push(`  return decode(input, ${readFn})`)
   lines.push(`}`)
   lines.push('')
@@ -754,7 +808,9 @@ function generateEnumJson(lines: string[], def: XdrEnum, screamingPrefix: string
 
   lines.push(`export function fromJson${def.name}(json: unknown): ${def.name} {`)
   lines.push(`  const result = _${screamingPrefix}_FROM_JSON[json as string]`)
-  lines.push(`  if (result === undefined) throw new Error(\`Unknown ${def.name} JSON value: \${json}\`)`)
+  lines.push(
+    `  if (result === undefined) throw new Error(\`Unknown ${def.name} JSON value: \${json}\`)`,
+  )
   lines.push(`  return result`)
   lines.push(`}`)
 }
@@ -795,10 +851,12 @@ function generateStruct(def: XdrStruct): string {
     lines.push(`    return {}`)
   } else {
     // If a field needed renaming, use `fieldName: varName_` shorthand form
-    const fieldList = nonVoidFields.map((f) => {
-      const varName = safeVarName(f.name)
-      return varName === f.name ? f.name : `${f.name}: ${varName}`
-    }).join(', ')
+    const fieldList = nonVoidFields
+      .map((f) => {
+        const varName = safeVarName(f.name)
+        return varName === f.name ? f.name : `${f.name}: ${varName}`
+      })
+      .join(', ')
     lines.push(`    return { ${fieldList} }`)
   }
   lines.push(`  } finally {`)
@@ -820,7 +878,9 @@ function generateStruct(def: XdrStruct): string {
   lines.push(`  return encode(v, ${writeFn})`)
   lines.push(`}`)
   lines.push('')
-  lines.push(`export function ${toDecodeFnName(def.name)}(input: Uint8Array | string): ${def.name} {`)
+  lines.push(
+    `export function ${toDecodeFnName(def.name)}(input: Uint8Array | string): ${def.name} {`,
+  )
   lines.push(`  return decode(input, ${readFn})`)
   lines.push(`}`)
   lines.push('')
@@ -845,7 +905,9 @@ function generateStructJson(
     lines.push(`export function fromJson${def.name}(json: unknown): ${def.name} {`)
     lines.push(`  if (typeof json === 'object' && json !== null) {`)
     lines.push(`    const o = json as Record<string, unknown>`)
-    lines.push(`    return { hi: BigInt(o['hi'] as string | number), lo: BigInt(o['lo'] as string | number) }`)
+    lines.push(
+      `    return { hi: BigInt(o['hi'] as string | number), lo: BigInt(o['lo'] as string | number) }`,
+    )
     lines.push(`  }`)
     lines.push(`  const [hi, lo] = decimalToInt128Parts(json as string)`)
     lines.push(`  return { hi, lo }`)
@@ -860,7 +922,9 @@ function generateStructJson(
     lines.push(`export function fromJson${def.name}(json: unknown): ${def.name} {`)
     lines.push(`  if (typeof json === 'object' && json !== null) {`)
     lines.push(`    const o = json as Record<string, unknown>`)
-    lines.push(`    return { hi: BigInt(o['hi'] as string | number), lo: BigInt(o['lo'] as string | number) }`)
+    lines.push(
+      `    return { hi: BigInt(o['hi'] as string | number), lo: BigInt(o['lo'] as string | number) }`,
+    )
     lines.push(`  }`)
     lines.push(`  const [hi, lo] = decimalToUint128Parts(json as string)`)
     lines.push(`  return { hi, lo }`)
@@ -875,7 +939,9 @@ function generateStructJson(
     lines.push(`export function fromJson${def.name}(json: unknown): ${def.name} {`)
     lines.push(`  if (typeof json === 'object' && json !== null) {`)
     lines.push(`    const o = json as Record<string, unknown>`)
-    lines.push(`    return { hi_hi: BigInt(o['hi_hi'] as string | number), hi_lo: BigInt(o['hi_lo'] as string | number), lo_hi: BigInt(o['lo_hi'] as string | number), lo_lo: BigInt(o['lo_lo'] as string | number) }`)
+    lines.push(
+      `    return { hi_hi: BigInt(o['hi_hi'] as string | number), hi_lo: BigInt(o['hi_lo'] as string | number), lo_hi: BigInt(o['lo_hi'] as string | number), lo_lo: BigInt(o['lo_lo'] as string | number) }`,
+    )
     lines.push(`  }`)
     lines.push(`  const [hi_hi, hi_lo, lo_hi, lo_lo] = decimalToInt256Parts(json as string)`)
     lines.push(`  return { hi_hi, hi_lo, lo_hi, lo_lo }`)
@@ -890,7 +956,9 @@ function generateStructJson(
     lines.push(`export function fromJson${def.name}(json: unknown): ${def.name} {`)
     lines.push(`  if (typeof json === 'object' && json !== null) {`)
     lines.push(`    const o = json as Record<string, unknown>`)
-    lines.push(`    return { hi_hi: BigInt(o['hi_hi'] as string | number), hi_lo: BigInt(o['hi_lo'] as string | number), lo_hi: BigInt(o['lo_hi'] as string | number), lo_lo: BigInt(o['lo_lo'] as string | number) }`)
+    lines.push(
+      `    return { hi_hi: BigInt(o['hi_hi'] as string | number), hi_lo: BigInt(o['hi_lo'] as string | number), lo_hi: BigInt(o['lo_hi'] as string | number), lo_lo: BigInt(o['lo_lo'] as string | number) }`,
+    )
     lines.push(`  }`)
     lines.push(`  const [hi_hi, hi_lo, lo_hi, lo_lo] = decimalToUint256Parts(json as string)`)
     lines.push(`  return { hi_hi, hi_lo, lo_hi, lo_lo }`)
@@ -971,8 +1039,7 @@ function generateUnion(def: XdrUnion): string {
 
   // Determine whether the discriminant is an enum (named enum type) or a plain integer.
   const isEnumDiscriminant =
-    discriminantType.kind === 'named' &&
-    _kindRegistry.get(discriminantType.name) === 'enum'
+    discriminantType.kind === 'named' && _kindRegistry.get(discriminantType.name) === 'enum'
 
   function caseTypeStr(caseVal: string | number): string {
     if (isEnumDiscriminant) {
@@ -1002,7 +1069,9 @@ function generateUnion(def: XdrUnion): string {
         lines.push(`  | { readonly ${discriminantName}: ${ct} }`)
       } else {
         const fieldType = tsType(arm.type)
-        lines.push(`  | { readonly ${discriminantName}: ${ct}; readonly ${arm.name!}: ${fieldType} }`)
+        lines.push(
+          `  | { readonly ${discriminantName}: ${ct}; readonly ${arm.name!}: ${fieldType} }`,
+        )
       }
     }
   }
@@ -1013,7 +1082,9 @@ function generateUnion(def: XdrUnion): string {
       lines.push(`  | { readonly ${discriminantName}: ${defaultDiscriminantType} }`)
     } else {
       const fieldType = tsType(def.defaultArm)
-      lines.push(`  | { readonly ${discriminantName}: ${defaultDiscriminantType}; readonly value: ${fieldType} }`)
+      lines.push(
+        `  | { readonly ${discriminantName}: ${defaultDiscriminantType}; readonly value: ${fieldType} }`,
+      )
     }
   }
   lines.push('')
@@ -1024,10 +1095,18 @@ function generateUnion(def: XdrUnion): string {
     discriminantReadFn = toReadFnName(discriminantType.name)
   } else if (discriminantType.kind === 'primitive') {
     switch (discriminantType.primitive) {
-      case 'int':          discriminantReadFn = 'readInt32'; break
-      case 'unsigned int': discriminantReadFn = 'readUint32'; break
-      case 'bool':         discriminantReadFn = 'readBool'; break
-      default:             discriminantReadFn = 'readInt32'; break
+      case 'int':
+        discriminantReadFn = 'readInt32'
+        break
+      case 'unsigned int':
+        discriminantReadFn = 'readUint32'
+        break
+      case 'bool':
+        discriminantReadFn = 'readBool'
+        break
+      default:
+        discriminantReadFn = 'readInt32'
+        break
     }
   } else {
     discriminantReadFn = 'readInt32'
@@ -1048,7 +1127,9 @@ function generateUnion(def: XdrUnion): string {
     if (isVoid) {
       lines.push(`        result = { ${discriminantName} }; break`)
     } else {
-      lines.push(`        result = { ${discriminantName}, ${arm.name!}: ${readExpr(arm.type)} }; break`)
+      lines.push(
+        `        result = { ${discriminantName}, ${arm.name!}: ${readExpr(arm.type)} }; break`,
+      )
     }
   }
 
@@ -1058,11 +1139,15 @@ function generateUnion(def: XdrUnion): string {
     if (isVoid) {
       lines.push(`        result = { ${discriminantName} } as ${def.name}; break`)
     } else {
-      lines.push(`        result = { ${discriminantName}, value: ${readExpr(def.defaultArm)} } as ${def.name}; break`)
+      lines.push(
+        `        result = { ${discriminantName}, value: ${readExpr(def.defaultArm)} } as ${def.name}; break`,
+      )
     }
   } else {
     lines.push(`      default:`)
-    lines.push(`        throw new XdrReadError(\`Unknown ${def.name} discriminant: \${${discriminantName}}\`, 'INVALID_UNION_DISCRIMINANT')`)
+    lines.push(
+      `        throw new XdrReadError(\`Unknown ${def.name} discriminant: \${${discriminantName}}\`, 'INVALID_UNION_DISCRIMINANT')`,
+    )
   }
 
   lines.push(`    }`)
@@ -1110,7 +1195,9 @@ function generateUnion(def: XdrUnion): string {
   lines.push(`  return encode(v, ${writeFn})`)
   lines.push(`}`)
   lines.push('')
-  lines.push(`export function ${toDecodeFnName(def.name)}(input: Uint8Array | string): ${def.name} {`)
+  lines.push(
+    `export function ${toDecodeFnName(def.name)}(input: Uint8Array | string): ${def.name} {`,
+  )
   lines.push(`  return decode(input, ${readFn})`)
   lines.push(`}`)
   lines.push('')
@@ -1146,7 +1233,9 @@ function generateUnionJson(
       if (isVoid) {
         lines.push(`      return '${jsonKey}'`)
       } else {
-        lines.push(`      return { '${jsonKey}': ${toJsonExpr(arm.type, `(v as any).${arm.name!}`)} }`)
+        lines.push(
+          `      return { '${jsonKey}': ${toJsonExpr(arm.type, `(v as any).${arm.name!}`)} }`,
+        )
       }
     }
   }
@@ -1162,9 +1251,13 @@ function generateUnionJson(
       }
     } else {
       if (isEnumDiscriminant) {
-        lines.push(`      return { [toJson${enumTypeName}(v.${discriminantName} as any)]: ${toJsonExpr(def.defaultArm, `(v as any).value`)} }`)
+        lines.push(
+          `      return { [toJson${enumTypeName}(v.${discriminantName} as any)]: ${toJsonExpr(def.defaultArm, `(v as any).value`)} }`,
+        )
       } else {
-        lines.push(`      return { ['v' + v.${discriminantName}]: ${toJsonExpr(def.defaultArm, `(v as any).value`)} }`)
+        lines.push(
+          `      return { ['v' + v.${discriminantName}]: ${toJsonExpr(def.defaultArm, `(v as any).value`)} }`,
+        )
       }
     }
   }
@@ -1185,11 +1278,17 @@ function generateUnionJson(
     hasVoidArm = true
     for (const caseVal of arm.cases) {
       const jsonKey = unionCaseJsonName(caseVal, isEnumDiscriminant, enumTypeName)
-      lines.push(`    if (json === '${jsonKey}') return { ${discriminantName}: ${caseSwitchStr(caseVal)} } as ${def.name}`)
+      lines.push(
+        `    if (json === '${jsonKey}') return { ${discriminantName}: ${caseSwitchStr(caseVal)} } as ${def.name}`,
+      )
     }
   }
 
-  if (def.defaultArm && def.defaultArm.kind === 'primitive' && def.defaultArm.primitive === 'void') {
+  if (
+    def.defaultArm &&
+    def.defaultArm.kind === 'primitive' &&
+    def.defaultArm.primitive === 'void'
+  ) {
     if (isEnumDiscriminant) {
       lines.push(`    return { ${discriminantName}: fromJson${enumTypeName}(json) } as ${def.name}`)
     } else {
@@ -1213,16 +1312,25 @@ function generateUnionJson(
     for (const caseVal of arm.cases) {
       const jsonKey = unionCaseJsonName(caseVal, isEnumDiscriminant, enumTypeName)
       lines.push(`    case '${jsonKey}':`)
-      lines.push(`      return { ${discriminantName}: ${caseSwitchStr(caseVal)}, ${arm.name!}: ${fromJsonExpr(arm.type, `obj[key]`)} } as ${def.name}`)
+      lines.push(
+        `      return { ${discriminantName}: ${caseSwitchStr(caseVal)}, ${arm.name!}: ${fromJsonExpr(arm.type, `obj[key]`)} } as ${def.name}`,
+      )
     }
   }
 
-  if (def.defaultArm && !(def.defaultArm.kind === 'primitive' && def.defaultArm.primitive === 'void')) {
+  if (
+    def.defaultArm &&
+    !(def.defaultArm.kind === 'primitive' && def.defaultArm.primitive === 'void')
+  ) {
     lines.push(`    default:`)
     if (isEnumDiscriminant) {
-      lines.push(`      return { ${discriminantName}: fromJson${enumTypeName}(key), value: ${fromJsonExpr(def.defaultArm, `obj[key]`)} } as ${def.name}`)
+      lines.push(
+        `      return { ${discriminantName}: fromJson${enumTypeName}(key), value: ${fromJsonExpr(def.defaultArm, `obj[key]`)} } as ${def.name}`,
+      )
     } else {
-      lines.push(`      return { ${discriminantName}: parseInt(key.slice(1), 10), value: ${fromJsonExpr(def.defaultArm, `obj[key]`)} } as ${def.name}`)
+      lines.push(
+        `      return { ${discriminantName}: parseInt(key.slice(1), 10), value: ${fromJsonExpr(def.defaultArm, `obj[key]`)} } as ${def.name}`,
+      )
     }
   } else {
     lines.push(`    default: throw new Error(\`Unknown ${def.name} variant: \${key}\`)`)
@@ -1248,7 +1356,9 @@ function generateCustomUnionJson(
     lines.push('')
     lines.push(`export function fromJsonPublicKey(json: unknown): PublicKey {`)
     lines.push(`  if (typeof json === 'string') {`)
-    lines.push(`    return { ${discriminantName}: 'PUBLIC_KEY_TYPE_ED25519', ed25519: decodeEd25519PublicKey(json) }`)
+    lines.push(
+      `    return { ${discriminantName}: 'PUBLIC_KEY_TYPE_ED25519', ed25519: decodeEd25519PublicKey(json) }`,
+    )
     lines.push(`  }`)
     lines.push(`  throw new Error('Invalid PublicKey JSON')`)
     lines.push(`}`)
@@ -1261,7 +1371,9 @@ function generateCustomUnionJson(
     lines.push(`    case 'KEY_TYPE_ED25519':`)
     lines.push(`      return encodeEd25519PublicKey((v as any).ed25519)`)
     lines.push(`    case 'KEY_TYPE_MUXED_ED25519':`)
-    lines.push(`      return encodeMuxedAccountStrKey((v as any).med25519.ed25519, (v as any).med25519.id)`)
+    lines.push(
+      `      return encodeMuxedAccountStrKey((v as any).med25519.ed25519, (v as any).med25519.id)`,
+    )
     lines.push(`  }`)
     lines.push(`}`)
     lines.push('')
@@ -1269,9 +1381,13 @@ function generateCustomUnionJson(
     lines.push(`  const s = json as string`)
     lines.push(`  if (s.startsWith('M')) {`)
     lines.push(`    const { ed25519, memoId } = decodeMuxedAccountStrKey(s)`)
-    lines.push(`    return { ${discriminantName}: 'KEY_TYPE_MUXED_ED25519', med25519: { id: memoId, ed25519 } }`)
+    lines.push(
+      `    return { ${discriminantName}: 'KEY_TYPE_MUXED_ED25519', med25519: { id: memoId, ed25519 } }`,
+    )
     lines.push(`  }`)
-    lines.push(`  return { ${discriminantName}: 'KEY_TYPE_ED25519', ed25519: decodeEd25519PublicKey(s) }`)
+    lines.push(
+      `  return { ${discriminantName}: 'KEY_TYPE_ED25519', ed25519: decodeEd25519PublicKey(s) }`,
+    )
     lines.push(`}`)
     return true
   }
@@ -1289,9 +1405,13 @@ function generateCustomUnionJson(
     lines.push(`export function fromJsonAssetCode(json: unknown): AssetCode {`)
     lines.push(`  const s = json as string`)
     lines.push(`  if (assetCodeByteLength(s) <= 4) {`)
-    lines.push(`    return { ${discriminantName}: 'ASSET_TYPE_CREDIT_ALPHANUM4', assetCode4: fromJsonAssetCode4(s) }`)
+    lines.push(
+      `    return { ${discriminantName}: 'ASSET_TYPE_CREDIT_ALPHANUM4', assetCode4: fromJsonAssetCode4(s) }`,
+    )
     lines.push(`  }`)
-    lines.push(`  return { ${discriminantName}: 'ASSET_TYPE_CREDIT_ALPHANUM12', assetCode12: fromJsonAssetCode12(s) }`)
+    lines.push(
+      `  return { ${discriminantName}: 'ASSET_TYPE_CREDIT_ALPHANUM12', assetCode12: fromJsonAssetCode12(s) }`,
+    )
     lines.push(`}`)
     return true
   }
@@ -1314,16 +1434,24 @@ function generateCustomUnionJson(
     lines.push(`export function fromJsonSignerKey(json: unknown): SignerKey {`)
     lines.push(`  const s = json as string`)
     lines.push(`  if (s.startsWith('G')) {`)
-    lines.push(`    return { ${discriminantName}: 'SIGNER_KEY_TYPE_ED25519', ed25519: decodeEd25519PublicKey(s) }`)
+    lines.push(
+      `    return { ${discriminantName}: 'SIGNER_KEY_TYPE_ED25519', ed25519: decodeEd25519PublicKey(s) }`,
+    )
     lines.push(`  }`)
     lines.push(`  if (s.startsWith('T')) {`)
-    lines.push(`    return { ${discriminantName}: 'SIGNER_KEY_TYPE_PRE_AUTH_TX', preAuthTx: decodePreAuthTx(s) }`)
+    lines.push(
+      `    return { ${discriminantName}: 'SIGNER_KEY_TYPE_PRE_AUTH_TX', preAuthTx: decodePreAuthTx(s) }`,
+    )
     lines.push(`  }`)
     lines.push(`  if (s.startsWith('X')) {`)
-    lines.push(`    return { ${discriminantName}: 'SIGNER_KEY_TYPE_HASH_X', hashX: decodeSha256Hash(s) }`)
+    lines.push(
+      `    return { ${discriminantName}: 'SIGNER_KEY_TYPE_HASH_X', hashX: decodeSha256Hash(s) }`,
+    )
     lines.push(`  }`)
     lines.push(`  if (s.startsWith('P')) {`)
-    lines.push(`    return { ${discriminantName}: 'SIGNER_KEY_TYPE_ED25519_SIGNED_PAYLOAD', ed25519SignedPayload: fromJsonSignerKey_ed25519SignedPayload(s) }`)
+    lines.push(
+      `    return { ${discriminantName}: 'SIGNER_KEY_TYPE_ED25519_SIGNED_PAYLOAD', ed25519SignedPayload: fromJsonSignerKey_ed25519SignedPayload(s) }`,
+    )
     lines.push(`  }`)
     lines.push(`  throw new Error(\`Invalid SignerKey JSON: \${s}\`)`)
     lines.push(`}`)
@@ -1350,19 +1478,29 @@ function generateCustomUnionJson(
     lines.push(`export function fromJsonSCAddress(json: unknown): SCAddress {`)
     lines.push(`  const s = json as string`)
     lines.push(`  if (s.startsWith('G')) {`)
-    lines.push(`    return { ${discriminantName}: 'SC_ADDRESS_TYPE_ACCOUNT', accountId: fromJsonAccountID(s) }`)
+    lines.push(
+      `    return { ${discriminantName}: 'SC_ADDRESS_TYPE_ACCOUNT', accountId: fromJsonAccountID(s) }`,
+    )
     lines.push(`  }`)
     lines.push(`  if (s.startsWith('C')) {`)
-    lines.push(`    return { ${discriminantName}: 'SC_ADDRESS_TYPE_CONTRACT', contractId: fromJsonContractID(s) }`)
+    lines.push(
+      `    return { ${discriminantName}: 'SC_ADDRESS_TYPE_CONTRACT', contractId: fromJsonContractID(s) }`,
+    )
     lines.push(`  }`)
     lines.push(`  if (s.startsWith('M')) {`)
-    lines.push(`    return { ${discriminantName}: 'SC_ADDRESS_TYPE_MUXED_ACCOUNT', muxedAccount: fromJsonMuxedEd25519Account(s) }`)
+    lines.push(
+      `    return { ${discriminantName}: 'SC_ADDRESS_TYPE_MUXED_ACCOUNT', muxedAccount: fromJsonMuxedEd25519Account(s) }`,
+    )
     lines.push(`  }`)
     lines.push(`  if (s.startsWith('B')) {`)
-    lines.push(`    return { ${discriminantName}: 'SC_ADDRESS_TYPE_CLAIMABLE_BALANCE', claimableBalanceId: fromJsonClaimableBalanceID(s) }`)
+    lines.push(
+      `    return { ${discriminantName}: 'SC_ADDRESS_TYPE_CLAIMABLE_BALANCE', claimableBalanceId: fromJsonClaimableBalanceID(s) }`,
+    )
     lines.push(`  }`)
     lines.push(`  if (s.startsWith('L')) {`)
-    lines.push(`    return { ${discriminantName}: 'SC_ADDRESS_TYPE_LIQUIDITY_POOL', liquidityPoolId: fromJsonPoolID(s) }`)
+    lines.push(
+      `    return { ${discriminantName}: 'SC_ADDRESS_TYPE_LIQUIDITY_POOL', liquidityPoolId: fromJsonPoolID(s) }`,
+    )
     lines.push(`  }`)
     lines.push(`  throw new Error(\`Invalid SCAddress JSON: \${s}\`)`)
     lines.push(`}`)

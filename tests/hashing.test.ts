@@ -83,17 +83,13 @@ describe('networkId', () => {
   it('computes testnet network ID', () => {
     const id = networkId(Networks.TESTNET)
     expect(id.length).toBe(32)
-    expect(bytesToHex(id)).toBe(
-      'cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472',
-    )
+    expect(bytesToHex(id)).toBe('cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472')
   })
 
   it('computes public network ID', () => {
     const id = networkId(Networks.PUBLIC)
     expect(id.length).toBe(32)
-    expect(bytesToHex(id)).toBe(
-      '7ac33997544e3175d266bd022439b22cdb16508c01163f26e5cb2a3e1045a979',
-    )
+    expect(bytesToHex(id)).toBe('7ac33997544e3175d266bd022439b22cdb16508c01163f26e5cb2a3e1045a979')
   })
 })
 

@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { toJsonBinaryFuseFilterType, fromJsonBinaryFuseFilterType } from '../src/generated/types.ts'
 import { ENUM_INTROSPECTION, UNION_INTROSPECTION } from '../src/generated/introspection.ts'
-import { parseCodegenCliArgs, getStellarXdrBase, resolveCodegenOptions } from '../scripts/codegen/index.ts'
+import {
+  parseCodegenCliArgs,
+  getStellarXdrBase,
+  resolveCodegenOptions,
+} from '../scripts/codegen/index.ts'
 import { computeEnumPrefix, enumMemberJsonName } from '../scripts/codegen/generator.ts'
 
 const SOURCE_LOCK_FIXTURE = {
@@ -49,7 +53,9 @@ describe('codegen CLI args', () => {
       ref: 'stable',
       outDir: undefined,
     })
-    expect(parseCodegenCliArgs(['bun', 'scripts/codegen/index.ts', '--out-dir', 'src/generated-next'])).toEqual({
+    expect(
+      parseCodegenCliArgs(['bun', 'scripts/codegen/index.ts', '--out-dir', 'src/generated-next']),
+    ).toEqual({
       channel: 'curr',
       ref: undefined,
       outDir: 'src/generated-next',
@@ -62,16 +68,30 @@ describe('codegen CLI args', () => {
   })
 
   it('rejects missing/unknown args', () => {
-    expect(() => parseCodegenCliArgs(['bun', 'scripts/codegen/index.ts', '--ref'])).toThrow(/Missing value/)
-    expect(() => parseCodegenCliArgs(['bun', 'scripts/codegen/index.ts', '--channel'])).toThrow(/Missing value/)
-    expect(() => parseCodegenCliArgs(['bun', 'scripts/codegen/index.ts', '--out-dir'])).toThrow(/Missing value/)
-    expect(() => parseCodegenCliArgs(['bun', 'scripts/codegen/index.ts', '--channel', 'foo'])).toThrow(/Invalid --channel/)
-    expect(() => parseCodegenCliArgs(['bun', 'scripts/codegen/index.ts', '--wat'])).toThrow(/Unknown argument/)
+    expect(() => parseCodegenCliArgs(['bun', 'scripts/codegen/index.ts', '--ref'])).toThrow(
+      /Missing value/,
+    )
+    expect(() => parseCodegenCliArgs(['bun', 'scripts/codegen/index.ts', '--channel'])).toThrow(
+      /Missing value/,
+    )
+    expect(() => parseCodegenCliArgs(['bun', 'scripts/codegen/index.ts', '--out-dir'])).toThrow(
+      /Missing value/,
+    )
+    expect(() =>
+      parseCodegenCliArgs(['bun', 'scripts/codegen/index.ts', '--channel', 'foo']),
+    ).toThrow(/Invalid --channel/)
+    expect(() => parseCodegenCliArgs(['bun', 'scripts/codegen/index.ts', '--wat'])).toThrow(
+      /Unknown argument/,
+    )
   })
 
   it('builds raw github URL from ref', () => {
-    expect(getStellarXdrBase('curr')).toBe('https://raw.githubusercontent.com/stellar/stellar-xdr/curr')
-    expect(getStellarXdrBase('next')).toBe('https://raw.githubusercontent.com/stellar/stellar-xdr/next')
+    expect(getStellarXdrBase('curr')).toBe(
+      'https://raw.githubusercontent.com/stellar/stellar-xdr/curr',
+    )
+    expect(getStellarXdrBase('next')).toBe(
+      'https://raw.githubusercontent.com/stellar/stellar-xdr/next',
+    )
   })
 })
 
@@ -82,7 +102,8 @@ describe('codegen source-lock resolution', () => {
       ref: 'v25.0',
       outDir: 'src/generated',
       lockedCommit: '0a621ec7811db000a60efae5b35f78dee3aa2533',
-      sourceDescriptor: 'https://github.com/stellar/stellar-xdr (channel=curr, ref=v25.0, commit=0a621ec7811db000a60efae5b35f78dee3aa2533)',
+      sourceDescriptor:
+        'https://github.com/stellar/stellar-xdr (channel=curr, ref=v25.0, commit=0a621ec7811db000a60efae5b35f78dee3aa2533)',
     })
 
     expect(resolveCodegenOptions({ channel: 'next' }, SOURCE_LOCK_FIXTURE)).toEqual({
@@ -95,11 +116,16 @@ describe('codegen source-lock resolution', () => {
   })
 
   it('lets explicit CLI values override the source lock', () => {
-    expect(resolveCodegenOptions({
-      channel: 'curr',
-      ref: 'next',
-      outDir: '/tmp/out',
-    }, SOURCE_LOCK_FIXTURE)).toEqual({
+    expect(
+      resolveCodegenOptions(
+        {
+          channel: 'curr',
+          ref: 'next',
+          outDir: '/tmp/out',
+        },
+        SOURCE_LOCK_FIXTURE,
+      ),
+    ).toEqual({
       channel: 'curr',
       ref: 'next',
       outDir: '/tmp/out',

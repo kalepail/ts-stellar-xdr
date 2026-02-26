@@ -6,23 +6,16 @@
  * envelope wrapping, and Soroban auth extraction.
  */
 
-import type {
-  LedgerEntry_data,
-  LedgerKey,
-} from './generated/ledger-entries.js'
+import type { LedgerEntry_data, LedgerKey } from './generated/ledger-entries.js'
 
 import type {
   Transaction,
   TransactionEnvelope,
-  TransactionV1Envelope,
   FeeBumpTransaction,
   SorobanAuthorizationEntry,
 } from './generated/transaction.js'
 
-import {
-  encodeTransaction,
-  encodeFeeBumpTransaction,
-} from './generated/transaction.js'
+import { encodeTransaction, encodeFeeBumpTransaction } from './generated/transaction.js'
 
 import { sha256 } from './hashing.js'
 import { createWriter, toBytes, writeInt32 } from './codec.js'
@@ -43,21 +36,46 @@ export function ledgerEntryToKey(data: LedgerEntry_data): LedgerKey {
     case 'ACCOUNT':
       return { type: 'ACCOUNT', account: { accountID: data.account.accountID } }
     case 'TRUSTLINE':
-      return { type: 'TRUSTLINE', trustLine: { accountID: data.trustLine.accountID, asset: data.trustLine.asset } }
+      return {
+        type: 'TRUSTLINE',
+        trustLine: { accountID: data.trustLine.accountID, asset: data.trustLine.asset },
+      }
     case 'OFFER':
-      return { type: 'OFFER', offer: { sellerID: data.offer.sellerID, offerID: data.offer.offerID } }
+      return {
+        type: 'OFFER',
+        offer: { sellerID: data.offer.sellerID, offerID: data.offer.offerID },
+      }
     case 'DATA':
-      return { type: 'DATA', data: { accountID: data.data.accountID, dataName: data.data.dataName } }
+      return {
+        type: 'DATA',
+        data: { accountID: data.data.accountID, dataName: data.data.dataName },
+      }
     case 'CLAIMABLE_BALANCE':
-      return { type: 'CLAIMABLE_BALANCE', claimableBalance: { balanceID: data.claimableBalance.balanceID } }
+      return {
+        type: 'CLAIMABLE_BALANCE',
+        claimableBalance: { balanceID: data.claimableBalance.balanceID },
+      }
     case 'LIQUIDITY_POOL':
-      return { type: 'LIQUIDITY_POOL', liquidityPool: { liquidityPoolID: data.liquidityPool.liquidityPoolID } }
+      return {
+        type: 'LIQUIDITY_POOL',
+        liquidityPool: { liquidityPoolID: data.liquidityPool.liquidityPoolID },
+      }
     case 'CONTRACT_DATA':
-      return { type: 'CONTRACT_DATA', contractData: { contract: data.contractData.contract, key: data.contractData.key, durability: data.contractData.durability } }
+      return {
+        type: 'CONTRACT_DATA',
+        contractData: {
+          contract: data.contractData.contract,
+          key: data.contractData.key,
+          durability: data.contractData.durability,
+        },
+      }
     case 'CONTRACT_CODE':
       return { type: 'CONTRACT_CODE', contractCode: { hash: data.contractCode.hash } }
     case 'CONFIG_SETTING':
-      return { type: 'CONFIG_SETTING', configSetting: { configSettingID: data.configSetting.configSettingID } }
+      return {
+        type: 'CONFIG_SETTING',
+        configSetting: { configSettingID: data.configSetting.configSettingID },
+      }
     case 'TTL':
       return { type: 'TTL', ttl: { keyHash: data.ttl.keyHash } }
   }
@@ -122,9 +140,17 @@ export function hashTransactionEnvelope(
       return sha256(signaturePayload(networkPassphrase, ENVELOPE_TYPE_TX, encodeTransaction(tx)))
     }
     case 'ENVELOPE_TYPE_TX':
-      return sha256(signaturePayload(networkPassphrase, ENVELOPE_TYPE_TX, encodeTransaction(envelope.v1.tx)))
+      return sha256(
+        signaturePayload(networkPassphrase, ENVELOPE_TYPE_TX, encodeTransaction(envelope.v1.tx)),
+      )
     case 'ENVELOPE_TYPE_TX_FEE_BUMP':
-      return sha256(signaturePayload(networkPassphrase, ENVELOPE_TYPE_TX_FEE_BUMP, encodeFeeBumpTransaction(envelope.feeBump.tx)))
+      return sha256(
+        signaturePayload(
+          networkPassphrase,
+          ENVELOPE_TYPE_TX_FEE_BUMP,
+          encodeFeeBumpTransaction(envelope.feeBump.tx),
+        ),
+      )
   }
 }
 
@@ -139,7 +165,12 @@ export function hashTransactionEnvelope(
  * Returns an empty array if the envelope contains no Soroban operations.
  */
 export function extractSorobanAuths(envelope: TransactionEnvelope): SorobanAuthorizationEntry[] {
-  let ops: { readonly body: { readonly type: string; readonly invokeHostFunctionOp?: { readonly auth: SorobanAuthorizationEntry[] } } }[]
+  let ops: {
+    readonly body: {
+      readonly type: string
+      readonly invokeHostFunctionOp?: { readonly auth: SorobanAuthorizationEntry[] }
+    }
+  }[]
 
   switch (envelope.type) {
     case 'ENVELOPE_TYPE_TX_V0':

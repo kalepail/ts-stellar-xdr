@@ -1,16 +1,27 @@
 import { describe, it, expect } from 'vitest'
 import {
-  encodeStrKey, decodeStrKey,
-  isValidStrKey, isValidStrKeyOfType,
-  encodeEd25519PublicKey, decodeEd25519PublicKey,
-  encodeEd25519SecretSeed, decodeEd25519SecretSeed,
-  encodeContract, decodeContract,
-  encodeMuxedAccountStrKey, decodeMuxedAccountStrKey,
-  encodePreAuthTx, decodePreAuthTx,
-  encodeSha256Hash, decodeSha256Hash,
-  encodeSignedPayload, decodeSignedPayload,
-  encodeClaimableBalance, decodeClaimableBalance,
-  encodeLiquidityPool, decodeLiquidityPool,
+  encodeStrKey,
+  decodeStrKey,
+  isValidStrKey,
+  isValidStrKeyOfType,
+  encodeEd25519PublicKey,
+  decodeEd25519PublicKey,
+  encodeEd25519SecretSeed,
+  decodeEd25519SecretSeed,
+  encodeContract,
+  decodeContract,
+  encodeMuxedAccountStrKey,
+  decodeMuxedAccountStrKey,
+  encodePreAuthTx,
+  decodePreAuthTx,
+  encodeSha256Hash,
+  decodeSha256Hash,
+  encodeSignedPayload,
+  decodeSignedPayload,
+  encodeClaimableBalance,
+  decodeClaimableBalance,
+  encodeLiquidityPool,
+  decodeLiquidityPool,
   StrKeyVersion,
   StrKeyError,
 } from '../src/strkey.ts'
@@ -212,7 +223,9 @@ describe('error cases', () => {
   })
 
   it('rejects base32 with padding chars', () => {
-    expect(() => decodeStrKey('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF====')).toThrow(StrKeyError)
+    expect(() =>
+      decodeStrKey('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF===='),
+    ).toThrow(StrKeyError)
   })
 
   it('rejects invalid characters', () => {
@@ -274,10 +287,8 @@ describe('cross-compatibility with known Stellar addresses', () => {
 
 // The standard test key used across rs-stellar-xdr str.rs tests
 const RS_KEY = new Uint8Array([
-  0x3f, 0x0c, 0x34, 0xbf, 0x93, 0xad, 0x0d, 0x99,
-  0x71, 0xd0, 0x4c, 0xcc, 0x90, 0xf7, 0x05, 0x51,
-  0x1c, 0x83, 0x8a, 0xad, 0x97, 0x34, 0xa4, 0xa2,
-  0xfb, 0x0d, 0x7a, 0x03, 0xfc, 0x7f, 0xe8, 0x9a,
+  0x3f, 0x0c, 0x34, 0xbf, 0x93, 0xad, 0x0d, 0x99, 0x71, 0xd0, 0x4c, 0xcc, 0x90, 0xf7, 0x05, 0x51,
+  0x1c, 0x83, 0x8a, 0xad, 0x97, 0x34, 0xa4, 0xa2, 0xfb, 0x0d, 0x7a, 0x03, 0xfc, 0x7f, 0xe8, 0x9a,
 ])
 
 describe('Known test vectors from rs-stellar-xdr str.rs', () => {
@@ -316,13 +327,14 @@ describe('Known test vectors from rs-stellar-xdr str.rs', () => {
 
   it('SignedPayload (P) address matches rs-stellar-xdr', () => {
     const payload = new Uint8Array([
-      0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-      0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10,
-      0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
-      0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20,
+      0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+      0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e,
+      0x1f, 0x20,
     ])
     const addr = encodeSignedPayload(RS_KEY, payload)
-    expect(addr).toBe('PA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUAAAAAQACAQDAQCQMBYIBEFAWDANBYHRAEISCMKBKFQXDAMRUGY4DUPB6IBZGM')
+    expect(addr).toBe(
+      'PA7QYNF7SOWQ3GLR2BGMZEHXAVIRZA4KVWLTJJFC7MGXUA74P7UJUAAAAAQACAQDAQCQMBYIBEFAWDANBYHRAEISCMKBKFQXDAMRUGY4DUPB6IBZGM',
+    )
     const decoded = decodeSignedPayload(addr)
     expect(decoded.ed25519).toEqual(RS_KEY)
     expect(decoded.payload).toEqual(payload)

@@ -20,8 +20,17 @@
 
 import type { Token } from './lexer.js'
 import type {
-  XdrFile, XdrDefinition, XdrConst, XdrTypedef, XdrEnum, XdrEnumMember,
-  XdrStruct, XdrField, XdrUnion, XdrUnionArm, XdrTypeRef,
+  XdrFile,
+  XdrDefinition,
+  XdrConst,
+  XdrTypedef,
+  XdrEnum,
+  XdrEnumMember,
+  XdrStruct,
+  XdrField,
+  XdrUnion,
+  XdrUnionArm,
+  XdrTypeRef,
 } from './ast.js'
 
 export class ParseError extends Error {
@@ -66,13 +75,21 @@ export function parse(tokens: Token[]): XdrFile {
         ? parseInt(t.value, 16)
         : parseInt(t.value, 10)
     }
-    if (t.type === 'ident') return t.value  // const reference
+    if (t.type === 'ident') return t.value // const reference
     throw new ParseError('Expected numeric value or const identifier', t)
   }
 
   // Forward declarations (mutually recursive with parseDeclaration)
-  function parseDeclaration(syntheticPrefix?: string): { name: string; type: XdrTypeRef; doc?: string } | { name: undefined; type: XdrTypeRef; doc?: string }
-  function parseDeclaration(syntheticPrefix?: string): { name: string | undefined; type: XdrTypeRef; doc?: string } {
+  function parseDeclaration(
+    syntheticPrefix?: string,
+  ):
+    | { name: string; type: XdrTypeRef; doc?: string }
+    | { name: undefined; type: XdrTypeRef; doc?: string }
+  function parseDeclaration(syntheticPrefix?: string): {
+    name: string | undefined
+    type: XdrTypeRef
+    doc?: string
+  } {
     const t = peek()
 
     // void — no identifier follows
@@ -138,14 +155,29 @@ export function parse(tokens: Token[]): XdrFile {
 
       // Handle modifiers after the field name (rare for inline structs, but handle for completeness)
       if (peek().value === '[') {
-        advance(); const len = parseValue(); expect(']')
-        return { name: fieldName, type: { kind: 'fixedArray', elementType: { kind: 'named', name: synName }, len } }
+        advance()
+        const len = parseValue()
+        expect(']')
+        return {
+          name: fieldName,
+          type: { kind: 'fixedArray', elementType: { kind: 'named', name: synName }, len },
+        }
       }
       if (peek().value === '<') {
         advance()
-        if (peek().value === '>') { advance(); return { name: fieldName, type: { kind: 'varArray', elementType: { kind: 'named', name: synName } } } }
-        const maxLen = parseValue(); expect('>')
-        return { name: fieldName, type: { kind: 'varArray', elementType: { kind: 'named', name: synName }, maxLen } }
+        if (peek().value === '>') {
+          advance()
+          return {
+            name: fieldName,
+            type: { kind: 'varArray', elementType: { kind: 'named', name: synName } },
+          }
+        }
+        const maxLen = parseValue()
+        expect('>')
+        return {
+          name: fieldName,
+          type: { kind: 'varArray', elementType: { kind: 'named', name: synName }, maxLen },
+        }
       }
       return { name: fieldName, type: { kind: 'named', name: synName } }
     }
@@ -202,7 +234,7 @@ export function parse(tokens: Token[]): XdrFile {
     }
 
     // type-specifier (possibly with optional * modifier, or identifier + array modifiers)
-    const baseType = parseBaseTypeSpec(syntheticPrefix)
+    const baseType = parseBaseTypeSpec()
 
     // type-specifier * identifier  — optional
     if (peek().value === '*') {
@@ -245,22 +277,44 @@ export function parse(tokens: Token[]): XdrFile {
    * Parses ONLY the base type specifier — no array/optional modifiers, no identifier.
    * Handles named struct/union references (not inline anonymous ones — those are handled
    * in parseDeclaration).
-   *
-   * @param syntheticNameHint  Used to name inline anonymous types
    */
-  function parseBaseTypeSpec(syntheticNameHint?: string): XdrTypeRef {
+  function parseBaseTypeSpec(): XdrTypeRef {
     const t = peek()
 
-    if (t.value === 'void') { advance(); return { kind: 'primitive', primitive: 'void' } }
-    if (t.value === 'bool') { advance(); return { kind: 'primitive', primitive: 'bool' } }
-    if (t.value === 'int') { advance(); return { kind: 'primitive', primitive: 'int' } }
-    if (t.value === 'float') { advance(); return { kind: 'primitive', primitive: 'float' } }
-    if (t.value === 'double') { advance(); return { kind: 'primitive', primitive: 'double' } }
-    if (t.value === 'hyper') { advance(); return { kind: 'primitive', primitive: 'hyper' } }
+    if (t.value === 'void') {
+      advance()
+      return { kind: 'primitive', primitive: 'void' }
+    }
+    if (t.value === 'bool') {
+      advance()
+      return { kind: 'primitive', primitive: 'bool' }
+    }
+    if (t.value === 'int') {
+      advance()
+      return { kind: 'primitive', primitive: 'int' }
+    }
+    if (t.value === 'float') {
+      advance()
+      return { kind: 'primitive', primitive: 'float' }
+    }
+    if (t.value === 'double') {
+      advance()
+      return { kind: 'primitive', primitive: 'double' }
+    }
+    if (t.value === 'hyper') {
+      advance()
+      return { kind: 'primitive', primitive: 'hyper' }
+    }
     if (t.value === 'unsigned') {
       advance()
-      if (peek().value === 'int') { advance(); return { kind: 'primitive', primitive: 'unsigned int' } }
-      if (peek().value === 'hyper') { advance(); return { kind: 'primitive', primitive: 'unsigned hyper' } }
+      if (peek().value === 'int') {
+        advance()
+        return { kind: 'primitive', primitive: 'unsigned int' }
+      }
+      if (peek().value === 'hyper') {
+        advance()
+        return { kind: 'primitive', primitive: 'unsigned hyper' }
+      }
       throw new ParseError('Expected int or hyper after unsigned', peek())
     }
 

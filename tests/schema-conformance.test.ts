@@ -10,10 +10,7 @@ import {
   toJsonMemo,
   toJsonTransactionEnvelope,
 } from '../src/generated/transaction.ts'
-import {
-  fromJsonAsset,
-  toJsonAsset,
-} from '../src/generated/ledger-entries.ts'
+import { fromJsonAsset, toJsonAsset } from '../src/generated/ledger-entries.ts'
 import {
   fromJsonSignerKey,
   fromJsonPoolID,
@@ -22,10 +19,7 @@ import {
   toJsonPoolID,
   toJsonClaimableBalanceID,
 } from '../src/generated/types.ts'
-import {
-  fromJsonSCAddress,
-  toJsonSCAddress,
-} from '../src/generated/contract.ts'
+import { fromJsonSCAddress, toJsonSCAddress } from '../src/generated/contract.ts'
 import {
   fromJsonConfigSettingEntry,
   toJsonConfigSettingEntry,
@@ -149,14 +143,20 @@ describe('JSON Schema conformance (rs-stellar-xdr xdr-json/curr)', () => {
   })
 
   it('validates ClaimableBalanceId and PoolId schemas plus converter roundtrips', () => {
-    expect(validateClaimableBalanceId(B_ADDR), validationErrorText(validateClaimableBalanceId)).toBe(true)
+    expect(
+      validateClaimableBalanceId(B_ADDR),
+      validationErrorText(validateClaimableBalanceId),
+    ).toBe(true)
     expect(validatePoolId(L_ADDR), validationErrorText(validatePoolId)).toBe(true)
 
     expect(toJsonClaimableBalanceID(fromJsonClaimableBalanceID(B_ADDR))).toBe(B_ADDR)
     expect(toJsonPoolID(fromJsonPoolID(L_ADDR))).toBe(L_ADDR)
 
     // Canonical schemas are broad (type:string), strictness is enforced by converters.
-    expect(validateClaimableBalanceId(L_ADDR), validationErrorText(validateClaimableBalanceId)).toBe(true)
+    expect(
+      validateClaimableBalanceId(L_ADDR),
+      validationErrorText(validateClaimableBalanceId),
+    ).toBe(true)
     expect(validatePoolId(B_ADDR), validationErrorText(validatePoolId)).toBe(true)
     expect(() => fromJsonClaimableBalanceID(L_ADDR)).toThrow()
     expect(() => fromJsonPoolID(B_ADDR)).toThrow()
@@ -166,7 +166,9 @@ describe('JSON Schema conformance (rs-stellar-xdr xdr-json/curr)', () => {
     const json = {
       live_soroban_state_size_window: ['1', '2', '3', '18446744073709551615'],
     }
-    expect(validateConfigSettingEntry(json), validationErrorText(validateConfigSettingEntry)).toBe(true)
+    expect(validateConfigSettingEntry(json), validationErrorText(validateConfigSettingEntry)).toBe(
+      true,
+    )
     expect(toJsonConfigSettingEntry(fromJsonConfigSettingEntry(json))).toEqual(json)
 
     const malformed = {

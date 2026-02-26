@@ -1,5 +1,5 @@
 // AUTO-GENERATED — do not edit manually
-// Run: bun scripts/codegen/index.ts --ref curr
+// Run: bun scripts/codegen/index.ts --ref v25.0
 
 export interface EnumIntrospectionMember {
   readonly name: string

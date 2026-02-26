@@ -5,15 +5,11 @@
   "oneOf": [
     {
       "type": "string",
-      "enum": [
-        "native"
-      ]
+      "enum": ["native"]
     },
     {
       "type": "object",
-      "required": [
-        "credit_alphanum4"
-      ],
+      "required": ["credit_alphanum4"],
       "properties": {
         "credit_alphanum4": {
           "$ref": "#/definitions/AlphaNum4"
@@ -22,9 +18,7 @@
     },
     {
       "type": "object",
-      "required": [
-        "credit_alphanum12"
-      ],
+      "required": ["credit_alphanum12"],
       "properties": {
         "credit_alphanum12": {
           "$ref": "#/definitions/AlphaNum12"
@@ -45,10 +39,7 @@
     "AlphaNum12": {
       "description": "AlphaNum12 is an XDR Struct defined as:\n\n```text struct AlphaNum12 { AssetCode12 assetCode; AccountID issuer; }; ```",
       "type": "object",
-      "required": [
-        "asset_code",
-        "issuer"
-      ],
+      "required": ["asset_code", "issuer"],
       "properties": {
         "asset_code": {
           "$ref": "#/definitions/AssetCode12"
@@ -61,10 +52,7 @@
     "AlphaNum4": {
       "description": "AlphaNum4 is an XDR Struct defined as:\n\n```text struct AlphaNum4 { AssetCode4 assetCode; AccountID issuer; }; ```",
       "type": "object",
-      "required": [
-        "asset_code",
-        "issuer"
-      ],
+      "required": ["asset_code", "issuer"],
       "properties": {
         "asset_code": {
           "$ref": "#/definitions/AssetCode4"

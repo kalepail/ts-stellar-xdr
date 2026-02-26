@@ -46,32 +46,34 @@ describe('validateScVal', () => {
     })
 
     it('rejects symbol with space', () => {
-      expect(() => validateScVal({ type: 'SCV_SYMBOL', sym: 'hello world' }))
-        .toThrow(ScValValidationError)
+      expect(() => validateScVal({ type: 'SCV_SYMBOL', sym: 'hello world' })).toThrow(
+        ScValValidationError,
+      )
     })
 
     it('rejects symbol with special chars', () => {
-      expect(() => validateScVal({ type: 'SCV_SYMBOL', sym: 'hello!' }))
-        .toThrow(ScValValidationError)
+      expect(() => validateScVal({ type: 'SCV_SYMBOL', sym: 'hello!' })).toThrow(
+        ScValValidationError,
+      )
     })
 
     it('rejects symbol with dash', () => {
-      expect(() => validateScVal({ type: 'SCV_SYMBOL', sym: 'hello-world' }))
-        .toThrow(ScValValidationError)
+      expect(() => validateScVal({ type: 'SCV_SYMBOL', sym: 'hello-world' })).toThrow(
+        ScValValidationError,
+      )
     })
 
     it('rejects symbol with dot', () => {
-      expect(() => validateScVal({ type: 'SCV_SYMBOL', sym: 'hello.world' }))
-        .toThrow(ScValValidationError)
+      expect(() => validateScVal({ type: 'SCV_SYMBOL', sym: 'hello.world' })).toThrow(
+        ScValValidationError,
+      )
     })
   })
 
   describe('SCV_VEC validation', () => {
     it('rejects Vec(None/undefined)', () => {
-      expect(() => validateScVal({ type: 'SCV_VEC', vec: undefined }))
-        .toThrow(ScValValidationError)
-      expect(() => validateScVal({ type: 'SCV_VEC', vec: undefined }))
-        .toThrow(/Vec\(None\)/)
+      expect(() => validateScVal({ type: 'SCV_VEC', vec: undefined })).toThrow(ScValValidationError)
+      expect(() => validateScVal({ type: 'SCV_VEC', vec: undefined })).toThrow(/Vec\(None\)/)
     })
 
     it('accepts empty vec', () => {
@@ -103,10 +105,8 @@ describe('validateScVal', () => {
 
   describe('SCV_MAP validation', () => {
     it('rejects Map(None/undefined)', () => {
-      expect(() => validateScVal({ type: 'SCV_MAP', map: undefined }))
-        .toThrow(ScValValidationError)
-      expect(() => validateScVal({ type: 'SCV_MAP', map: undefined }))
-        .toThrow(/Map\(None\)/)
+      expect(() => validateScVal({ type: 'SCV_MAP', map: undefined })).toThrow(ScValValidationError)
+      expect(() => validateScVal({ type: 'SCV_MAP', map: undefined })).toThrow(/Map\(None\)/)
     })
 
     it('accepts empty map', () => {
@@ -152,9 +152,7 @@ describe('validateScVal', () => {
     it('rejects map with invalid key', () => {
       const val: SCVal = {
         type: 'SCV_MAP',
-        map: [
-          { key: { type: 'SCV_SYMBOL', sym: 'invalid!' }, val: { type: 'SCV_U32', u32: 1 } },
-        ],
+        map: [{ key: { type: 'SCV_SYMBOL', sym: 'invalid!' }, val: { type: 'SCV_U32', u32: 1 } }],
       }
       expect(() => validateScVal(val)).toThrow(ScValValidationError)
     })
@@ -162,9 +160,7 @@ describe('validateScVal', () => {
     it('rejects map with invalid value', () => {
       const val: SCVal = {
         type: 'SCV_MAP',
-        map: [
-          { key: { type: 'SCV_SYMBOL', sym: 'ok' }, val: { type: 'SCV_VEC', vec: undefined } },
-        ],
+        map: [{ key: { type: 'SCV_SYMBOL', sym: 'ok' }, val: { type: 'SCV_VEC', vec: undefined } }],
       }
       expect(() => validateScVal(val)).toThrow(ScValValidationError)
     })
@@ -183,7 +179,10 @@ describe('validateScVal', () => {
                 {
                   type: 'SCV_MAP',
                   map: [
-                    { key: { type: 'SCV_SYMBOL', sym: 'inner' }, val: { type: 'SCV_U32', u32: 42 } },
+                    {
+                      key: { type: 'SCV_SYMBOL', sym: 'inner' },
+                      val: { type: 'SCV_U32', u32: 42 },
+                    },
                   ],
                 },
               ],
@@ -221,9 +220,7 @@ describe('validateScVal', () => {
 
 describe('validateScMap', () => {
   it('accepts single-entry map', () => {
-    const map: SCMap = [
-      { key: { type: 'SCV_U32', u32: 1 }, val: { type: 'SCV_VOID' } },
-    ]
+    const map: SCMap = [{ key: { type: 'SCV_U32', u32: 1 }, val: { type: 'SCV_VOID' } }]
     expect(() => validateScMap(map)).not.toThrow()
   })
 

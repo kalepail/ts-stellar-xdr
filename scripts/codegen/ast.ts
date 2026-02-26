@@ -9,18 +9,13 @@ export interface XdrFile {
 }
 
 // All possible top-level definitions
-export type XdrDefinition =
-  | XdrConst
-  | XdrTypedef
-  | XdrEnum
-  | XdrStruct
-  | XdrUnion
+export type XdrDefinition = XdrConst | XdrTypedef | XdrEnum | XdrStruct | XdrUnion
 
 // const IDENTIFIER = value;
 export interface XdrConst {
   kind: 'const'
   name: string
-  value: string | number  // e.g. "MAX_OPS" or 100
+  value: string | number // e.g. "MAX_OPS" or 100
   doc?: string
 }
 
@@ -42,7 +37,7 @@ export interface XdrEnum {
 
 export interface XdrEnumMember {
   name: string
-  value: string | number  // can reference a const name or be a literal
+  value: string | number // can reference a const name or be a literal
 }
 
 // struct IDENTIFIER { fields... }
@@ -64,18 +59,18 @@ export interface XdrUnion {
   kind: 'union'
   name: string
   discriminant: {
-    name: string    // variable name of the switch
-    type: XdrTypeRef  // type of the switch variable
+    name: string // variable name of the switch
+    type: XdrTypeRef // type of the switch variable
   }
   arms: XdrUnionArm[]
-  defaultArm?: XdrTypeRef  // default: type; (undefined means no default)
+  defaultArm?: XdrTypeRef // default: type; (undefined means no default)
   doc?: string
 }
 
 export interface XdrUnionArm {
-  cases: Array<string | number>  // one arm can handle multiple cases
+  cases: Array<string | number> // one arm can handle multiple cases
   type: XdrTypeRef
-  name?: string  // arm field name (present unless type is void)
+  name?: string // arm field name (present unless type is void)
 }
 
 // All possible type references
@@ -114,13 +109,13 @@ export interface XdrNamedTypeRef {
 // opaque[N] — fixed-length byte array
 export interface XdrOpaqueRef {
   kind: 'opaque'
-  len: string | number  // can reference a const
+  len: string | number // can reference a const
 }
 
 // opaque<N> or opaque<> — variable-length byte array
 export interface XdrVarOpaqueRef {
   kind: 'varOpaque'
-  maxLen?: string | number  // undefined means no limit (use UINT32_MAX)
+  maxLen?: string | number // undefined means no limit (use UINT32_MAX)
 }
 
 // string<N> or string<> — variable-length string

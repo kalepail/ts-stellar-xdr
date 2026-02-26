@@ -1,10 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import {
-  decodeTransactionEnvelope,
-  encodeTransactionEnvelope,
-  type TransactionEnvelope,
-} from '../src/generated/index.ts'
-import { bytesToBase64, base64ToBytes, bytesToHex } from '../src/codec.ts'
+import { decodeTransactionEnvelope, encodeTransactionEnvelope } from '../src/generated/index.ts'
+import { base64ToBytes, bytesToHex } from '../src/codec.ts'
 
 // ---------------------------------------------------------------------------
 // Vector 4: Payment (V1, ID Memo)
@@ -187,7 +183,7 @@ describe('Vector 8: Multiple ManageSellOffer/ManageBuyOffer (4 ops)', () => {
 
     // Helper to extract asset code string from a credit alphanum4 asset
     const assetCodeStr = (assetCode: Uint8Array) =>
-      new TextDecoder().decode(assetCode).replace(/\0/g, '')
+      new TextDecoder().decode(assetCode).replaceAll('\u0000', '')
 
     // Verify each operation involves EURL (ASSET_TYPE_CREDIT_ALPHANUM4)
     for (const op of tx.operations) {

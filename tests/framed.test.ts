@@ -51,7 +51,7 @@ describe('framed XDR', () => {
     const framed = encodeFramed(7, writeUint32)
     const withTrailing = new Uint8Array(framed.length + 1)
     withTrailing.set(framed)
-    withTrailing[withTrailing.length - 1] = 0xFF
+    withTrailing[withTrailing.length - 1] = 0xff
 
     expect(() => decodeFramed(withTrailing, readUint32)).toThrow(/trailing bytes/)
   })

@@ -1,0 +1,39 @@
+{
+  "generated_at": "2026-02-26T17:30:10.754Z",
+  "channel": "curr",
+  "ref": "v25.0",
+  "commit": "0a621ec7811db000a60efae5b35f78dee3aa2533",
+  "source_descriptor": "https://github.com/stellar/stellar-xdr (channel=curr, ref=v25.0, commit=0a621ec7811db000a60efae5b35f78dee3aa2533)",
+  "xdr_files": [
+    "Stellar-types.x",
+    "Stellar-SCP.x",
+    "Stellar-contract.x",
+    "Stellar-contract-spec.x",
+    "Stellar-contract-env-meta.x",
+    "Stellar-contract-meta.x",
+    "Stellar-contract-config-setting.x",
+    "Stellar-ledger-entries.x",
+    "Stellar-ledger.x",
+    "Stellar-transaction.x",
+    "Stellar-overlay.x",
+    "Stellar-internal.x",
+    "Stellar-exporter.x"
+  ],
+  "output_dir": "src/generated",
+  "generated_files": [
+    "types.ts",
+    "scp.ts",
+    "contract.ts",
+    "contract-spec.ts",
+    "contract-env-meta.ts",
+    "contract-meta.ts",
+    "contract-config-setting.ts",
+    "ledger-entries.ts",
+    "ledger.ts",
+    "transaction.ts",
+    "overlay.ts",
+    "internal.ts",
+    "exporter.ts",
+    "introspection.ts"
+  ]
+}

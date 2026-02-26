@@ -4,10 +4,10 @@
  */
 
 export type TokenType =
-  | 'ident'       // identifier or keyword
-  | 'number'      // numeric literal (decimal or hex)
-  | 'string'      // string literal (not common in XDR)
-  | 'punct'       // punctuation: { } ( ) [ ] < > ; , = * %
+  | 'ident' // identifier or keyword
+  | 'number' // numeric literal (decimal or hex)
+  | 'string' // string literal (not common in XDR)
+  | 'punct' // punctuation: { } ( ) [ ] < > ; , = * %
   | 'eof'
 
 export interface Token {
@@ -18,13 +18,6 @@ export interface Token {
   /** Accumulated comment text preceding this token (from .x source file). */
   leadingComment?: string
 }
-
-// XDR keywords
-const KEYWORDS = new Set([
-  'const', 'typedef', 'enum', 'struct', 'union', 'switch', 'case', 'default',
-  'int', 'unsigned', 'hyper', 'bool', 'float', 'double', 'void',
-  'opaque', 'string',
-])
 
 export function tokenize(source: string, filename = '<unknown>'): Token[] {
   const tokens: Token[] = []
@@ -38,7 +31,12 @@ export function tokenize(source: string, filename = '<unknown>'): Token[] {
 
   function advance(): string {
     const ch = source[i++]!
-    if (ch === '\n') { line++; col = 1 } else { col++ }
+    if (ch === '\n') {
+      line++
+      col = 1
+    } else {
+      col++
+    }
     return ch
   }
 
@@ -66,7 +64,8 @@ export function tokenize(source: string, filename = '<unknown>'): Token[] {
         // Check if the NEXT char is also a newline (blank line)
         // Look ahead past any \r\n or spaces
         let j = i + 1
-        while (j < source.length && (source[j] === ' ' || source[j] === '\t' || source[j] === '\r')) j++
+        while (j < source.length && (source[j] === ' ' || source[j] === '\t' || source[j] === '\r'))
+          j++
         if (j < source.length && source[j] === '\n') {
           // Blank line after comment — discard the pending comment
           pendingComment = []
@@ -81,8 +80,12 @@ export function tokenize(source: string, filename = '<unknown>'): Token[] {
     if (ch === '%' || (ch === '/' && peek(1) === '/')) {
       let comment = ''
       // Skip the prefix (% or //)
-      if (ch === '%') { advance() }
-      else { advance(); advance() }
+      if (ch === '%') {
+        advance()
+      } else {
+        advance()
+        advance()
+      }
       // Skip leading space
       if (peek() === ' ') advance()
       // Capture the rest of the line
@@ -96,26 +99,31 @@ export function tokenize(source: string, filename = '<unknown>'): Token[] {
 
     // Block comments: /* ... */
     if (ch === '/' && peek(1) === '*') {
-      advance(); advance() // consume /*
+      advance()
+      advance() // consume /*
       let comment = ''
       while (i < source.length) {
         if (peek() === '*' && peek(1) === '/') {
-          advance(); advance() // consume */
+          advance()
+          advance() // consume */
           break
         }
         comment += advance()
       }
       // Clean up block comment: remove leading/trailing whitespace,
       // remove leading * on each line (common in multi-line block comments)
-      const lines = comment.split('\n').map(l => {
-        const trimmed = l.replace(/^\s*\*?\s?/, '')
-        return trimmed
-      }).filter((l, idx, arr) => {
-        // Remove empty first and last lines
-        if (idx === 0 && l.trim() === '') return false
-        if (idx === arr.length - 1 && l.trim() === '') return false
-        return true
-      })
+      const lines = comment
+        .split('\n')
+        .map((l) => {
+          const trimmed = l.replace(/^\s*\*?\s?/, '')
+          return trimmed
+        })
+        .filter((l, idx, arr) => {
+          // Remove empty first and last lines
+          if (idx === 0 && l.trim() === '') return false
+          if (idx === arr.length - 1 && l.trim() === '') return false
+          return true
+        })
       if (lines.length > 0) {
         pendingComment.push(...lines)
       }
@@ -137,7 +145,13 @@ export function tokenize(source: string, filename = '<unknown>'): Token[] {
         }
       }
       const numComment = flushComment()
-      tokens.push({ type: 'number', value: num, line: startLine, col: startCol, leadingComment: numComment })
+      tokens.push({
+        type: 'number',
+        value: num,
+        line: startLine,
+        col: startCol,
+        leadingComment: numComment,
+      })
       continue
     }
 
@@ -148,7 +162,13 @@ export function tokenize(source: string, filename = '<unknown>'): Token[] {
         num += advance()
       }
       const negComment = flushComment()
-      tokens.push({ type: 'number', value: num, line: startLine, col: startCol, leadingComment: negComment })
+      tokens.push({
+        type: 'number',
+        value: num,
+        line: startLine,
+        col: startCol,
+        leadingComment: negComment,
+      })
       continue
     }
 
@@ -165,7 +185,13 @@ export function tokenize(source: string, filename = '<unknown>'): Token[] {
         ident += advance()
       }
       const identComment = flushComment()
-      tokens.push({ type: 'ident', value: ident, line: startLine, col: startCol, leadingComment: identComment })
+      tokens.push({
+        type: 'ident',
+        value: ident,
+        line: startLine,
+        col: startCol,
+        leadingComment: identComment,
+      })
       lastWasComment = false
       continue
     }
@@ -173,12 +199,20 @@ export function tokenize(source: string, filename = '<unknown>'): Token[] {
     // Punctuation
     if ('{}()[]<>;,=*:'.includes(ch)) {
       const punctComment = flushComment()
-      tokens.push({ type: 'punct', value: advance(), line: startLine, col: startCol, leadingComment: punctComment })
+      tokens.push({
+        type: 'punct',
+        value: advance(),
+        line: startLine,
+        col: startCol,
+        leadingComment: punctComment,
+      })
       lastWasComment = false
       continue
     }
 
-    throw new Error(`${filename}:${startLine}:${startCol}: Unexpected character: ${JSON.stringify(ch)}`)
+    throw new Error(
+      `${filename}:${startLine}:${startCol}: Unexpected character: ${JSON.stringify(ch)}`,
+    )
   }
 
   tokens.push({ type: 'eof', value: '', line, col })

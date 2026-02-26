@@ -2,112 +2,111 @@
   "name": "ts-stellar-xdr",
   "version": "0.1.0",
   "description": "Modern, tree-shakable XDR codec for the Stellar network",
-  "type": "module",
-  "sideEffects": false,
   "license": "Apache-2.0",
-  "packageManager": "bun@1.3.8",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    },
-    "./codec": {
-      "import": "./dist/codec.js",
-      "types": "./dist/codec.d.ts"
-    },
-    "./strkey": {
-      "import": "./dist/strkey.js",
-      "types": "./dist/strkey.d.ts"
-    },
-    "./hashing": {
-      "import": "./dist/hashing.js",
-      "types": "./dist/hashing.d.ts"
-    },
-    "./validate": {
-      "import": "./dist/validate.js",
-      "types": "./dist/validate.d.ts"
-    },
-    "./json": {
-      "import": "./dist/json.js",
-      "types": "./dist/json.d.ts"
-    },
-    "./types": {
-      "import": "./dist/generated/types.js",
-      "types": "./dist/generated/types.d.ts"
-    },
-    "./asset": {
-      "import": "./dist/generated/asset.js",
-      "types": "./dist/generated/asset.d.ts"
-    },
-    "./transaction": {
-      "import": "./dist/generated/transaction.js",
-      "types": "./dist/generated/transaction.d.ts"
-    },
-    "./contract": {
-      "import": "./dist/generated/contract.js",
-      "types": "./dist/generated/contract.d.ts"
-    },
-    "./contract-spec": {
-      "import": "./dist/generated/contract-spec.js",
-      "types": "./dist/generated/contract-spec.d.ts"
-    },
-    "./contract-env-meta": {
-      "import": "./dist/generated/contract-env-meta.js",
-      "types": "./dist/generated/contract-env-meta.d.ts"
-    },
-    "./contract-meta": {
-      "import": "./dist/generated/contract-meta.js",
-      "types": "./dist/generated/contract-meta.d.ts"
-    },
-    "./contract-config-setting": {
-      "import": "./dist/generated/contract-config-setting.js",
-      "types": "./dist/generated/contract-config-setting.d.ts"
-    },
-    "./ledger-entries": {
-      "import": "./dist/generated/ledger-entries.js",
-      "types": "./dist/generated/ledger-entries.d.ts"
-    },
-    "./ledger": {
-      "import": "./dist/generated/ledger.js",
-      "types": "./dist/generated/ledger.d.ts"
-    },
-    "./scp": {
-      "import": "./dist/generated/scp.js",
-      "types": "./dist/generated/scp.d.ts"
-    },
-    "./overlay": {
-      "import": "./dist/generated/overlay.js",
-      "types": "./dist/generated/overlay.d.ts"
-    },
-    "./internal": {
-      "import": "./dist/generated/internal.js",
-      "types": "./dist/generated/internal.d.ts"
-    },
-    "./exporter": {
-      "import": "./dist/generated/exporter.js",
-      "types": "./dist/generated/exporter.d.ts"
-    },
-    "./introspection": {
-      "import": "./dist/generated/introspection.js",
-      "types": "./dist/generated/introspection.d.ts"
-    },
-    "./helpers": {
-      "import": "./dist/helpers.js",
-      "types": "./dist/helpers.d.ts"
-    },
-    "./scval": {
-      "import": "./dist/scval.js",
-      "types": "./dist/scval.d.ts"
-    },
-    "./framed": {
-      "import": "./dist/framed.js",
-      "types": "./dist/framed.d.ts"
-    }
-  },
   "files": [
     "dist",
     "src"
   ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./codec": {
+      "types": "./dist/codec.d.ts",
+      "import": "./dist/codec.js"
+    },
+    "./strkey": {
+      "types": "./dist/strkey.d.ts",
+      "import": "./dist/strkey.js"
+    },
+    "./hashing": {
+      "types": "./dist/hashing.d.ts",
+      "import": "./dist/hashing.js"
+    },
+    "./validate": {
+      "types": "./dist/validate.d.ts",
+      "import": "./dist/validate.js"
+    },
+    "./json": {
+      "types": "./dist/json.d.ts",
+      "import": "./dist/json.js"
+    },
+    "./types": {
+      "types": "./dist/generated/types.d.ts",
+      "import": "./dist/generated/types.js"
+    },
+    "./asset": {
+      "types": "./dist/generated/asset.d.ts",
+      "import": "./dist/generated/asset.js"
+    },
+    "./transaction": {
+      "types": "./dist/generated/transaction.d.ts",
+      "import": "./dist/generated/transaction.js"
+    },
+    "./contract": {
+      "types": "./dist/generated/contract.d.ts",
+      "import": "./dist/generated/contract.js"
+    },
+    "./contract-spec": {
+      "types": "./dist/generated/contract-spec.d.ts",
+      "import": "./dist/generated/contract-spec.js"
+    },
+    "./contract-env-meta": {
+      "types": "./dist/generated/contract-env-meta.d.ts",
+      "import": "./dist/generated/contract-env-meta.js"
+    },
+    "./contract-meta": {
+      "types": "./dist/generated/contract-meta.d.ts",
+      "import": "./dist/generated/contract-meta.js"
+    },
+    "./contract-config-setting": {
+      "types": "./dist/generated/contract-config-setting.d.ts",
+      "import": "./dist/generated/contract-config-setting.js"
+    },
+    "./ledger-entries": {
+      "types": "./dist/generated/ledger-entries.d.ts",
+      "import": "./dist/generated/ledger-entries.js"
+    },
+    "./ledger": {
+      "types": "./dist/generated/ledger.d.ts",
+      "import": "./dist/generated/ledger.js"
+    },
+    "./scp": {
+      "types": "./dist/generated/scp.d.ts",
+      "import": "./dist/generated/scp.js"
+    },
+    "./overlay": {
+      "types": "./dist/generated/overlay.d.ts",
+      "import": "./dist/generated/overlay.js"
+    },
+    "./internal": {
+      "types": "./dist/generated/internal.d.ts",
+      "import": "./dist/generated/internal.js"
+    },
+    "./exporter": {
+      "types": "./dist/generated/exporter.d.ts",
+      "import": "./dist/generated/exporter.js"
+    },
+    "./introspection": {
+      "types": "./dist/generated/introspection.d.ts",
+      "import": "./dist/generated/introspection.js"
+    },
+    "./helpers": {
+      "types": "./dist/helpers.d.ts",
+      "import": "./dist/helpers.js"
+    },
+    "./scval": {
+      "types": "./dist/scval.d.ts",
+      "import": "./dist/scval.js"
+    },
+    "./framed": {
+      "types": "./dist/framed.d.ts",
+      "import": "./dist/framed.js"
+    }
+  },
   "scripts": {
     "build": "tsdown && node scripts/verify-exports.mjs",
     "dev": "tsdown --watch",
@@ -134,5 +133,6 @@
     "typescript": "latest",
     "vite": "latest",
     "vitest": "latest"
-  }
+  },
+  "packageManager": "bun@1.3.8"
 }

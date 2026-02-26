@@ -27,8 +27,7 @@ export type NetworkPassphrase = (typeof Networks)[keyof typeof Networks]
 
 /** SHA-256 initial hash values (first 32 bits of fractional parts of sqrt of first 8 primes). */
 const H0 = /*#__PURE__*/ new Uint32Array([
-  0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
-  0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
+  0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
 ])
 
 /** SHA-256 round constants (first 32 bits of fractional parts of cube roots of first 64 primes). */
@@ -89,8 +88,14 @@ export function sha256(input: Uint8Array | string): Uint8Array {
     }
 
     // Initialize working variables
-    let a = h[0]!, b = h[1]!, c = h[2]!, d = h[3]!
-    let e = h[4]!, f = h[5]!, g = h[6]!, hh = h[7]!
+    let a = h[0]!,
+      b = h[1]!,
+      c = h[2]!,
+      d = h[3]!
+    let e = h[4]!,
+      f = h[5]!,
+      g = h[6]!,
+      hh = h[7]!
 
     // Compression
     for (let i = 0; i < 64; i++) {
@@ -101,9 +106,13 @@ export function sha256(input: Uint8Array | string): Uint8Array {
       const maj = (a & b) ^ (a & c) ^ (b & c)
       const temp2 = (S0 + maj) >>> 0
 
-      hh = g; g = f; f = e
+      hh = g
+      g = f
+      f = e
       e = (d + temp1) >>> 0
-      d = c; c = b; b = a
+      d = c
+      c = b
+      b = a
       a = (temp1 + temp2) >>> 0
     }
 
@@ -199,10 +208,7 @@ export function feeBumpSignatureBase(
  * @param transactionXdr - The XDR-encoded Transaction body
  * @returns The 32-byte transaction hash
  */
-export function hashTransaction(
-  networkPassphrase: string,
-  transactionXdr: Uint8Array,
-): Uint8Array {
+export function hashTransaction(networkPassphrase: string, transactionXdr: Uint8Array): Uint8Array {
   return sha256(transactionSignatureBase(networkPassphrase, transactionXdr))
 }
 

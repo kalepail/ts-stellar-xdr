@@ -24,7 +24,10 @@ describe('nativeToScVal', () => {
   it('supports forced integer/string/symbol/address conversions', () => {
     expect(nativeToScVal('123', { type: 'u32' })).toEqual({ type: 'SCV_U32', u32: 123 })
     expect(nativeToScVal('hello', { type: 'symbol' })).toEqual({ type: 'SCV_SYMBOL', sym: 'hello' })
-    expect(nativeToScVal(Uint8Array.from([104, 105]), { type: 'string' })).toEqual({ type: 'SCV_STRING', str: 'hi' })
+    expect(nativeToScVal(Uint8Array.from([104, 105]), { type: 'string' })).toEqual({
+      type: 'SCV_STRING',
+      str: 'hi',
+    })
 
     const g = encodeEd25519PublicKey(new Uint8Array(32).fill(7))
     expect(nativeToScVal(g, { type: 'address' })).toEqual({
@@ -39,7 +42,12 @@ describe('nativeToScVal', () => {
   it('converts arrays with per-index type hints', () => {
     const scv = nativeToScVal([1, 'a', false, 'tail'], { type: ['i128', 'symbol'] })
     expect(scv.type).toBe('SCV_VEC')
-    expect(scv.vec?.map((v) => v.type)).toEqual(['SCV_I128', 'SCV_SYMBOL', 'SCV_BOOL', 'SCV_STRING'])
+    expect(scv.vec?.map((v) => v.type)).toEqual([
+      'SCV_I128',
+      'SCV_SYMBOL',
+      'SCV_BOOL',
+      'SCV_STRING',
+    ])
   })
 
   it('converts plain objects to sorted maps with key/value type overrides', () => {
@@ -74,10 +82,12 @@ describe('scValToNative', () => {
   it('converts integer-like variants back to bigint/number', () => {
     expect(scValToNative({ type: 'SCV_U32', u32: 9 })).toBe(9)
     expect(scValToNative({ type: 'SCV_I64', i64: -9n })).toBe(-9n)
-    expect(scValToNative({
-      type: 'SCV_I128',
-      i128: { hi: 1n, lo: 2n },
-    })).toBe(18446744073709551618n)
+    expect(
+      scValToNative({
+        type: 'SCV_I128',
+        i128: { hi: 1n, lo: 2n },
+      }),
+    ).toBe(18446744073709551618n)
   })
 
   it('converts map and vec recursively', () => {
@@ -89,7 +99,10 @@ describe('scValToNative', () => {
           key: { type: 'SCV_STRING', str: 'items' },
           val: {
             type: 'SCV_VEC',
-            vec: [{ type: 'SCV_SYMBOL', sym: 'a' }, { type: 'SCV_SYMBOL', sym: 'b' }],
+            vec: [
+              { type: 'SCV_SYMBOL', sym: 'a' },
+              { type: 'SCV_SYMBOL', sym: 'b' },
+            ],
           },
         },
       ],
@@ -101,14 +114,18 @@ describe('scValToNative', () => {
     const g = encodeEd25519PublicKey(new Uint8Array(32).fill(3))
     expect(scValToNative(nativeToScVal(g, { type: 'address' }))).toBe(g)
 
-    expect(scValToNative({
-      type: 'SCV_ERROR',
-      error: { type: 'SCE_CONTRACT', contractCode: 99 },
-    })).toEqual({ type: 'contract', code: 99 })
-    expect(scValToNative({
-      type: 'SCV_ERROR',
-      error: { type: 'SCE_STORAGE', code: 'SCEC_INTERNAL_ERROR' },
-    })).toEqual({ type: 'system', code: 'SCEC_INTERNAL_ERROR' })
+    expect(
+      scValToNative({
+        type: 'SCV_ERROR',
+        error: { type: 'SCE_CONTRACT', contractCode: 99 },
+      }),
+    ).toEqual({ type: 'contract', code: 99 })
+    expect(
+      scValToNative({
+        type: 'SCV_ERROR',
+        error: { type: 'SCE_STORAGE', code: 'SCEC_INTERNAL_ERROR' },
+      }),
+    ).toEqual({ type: 'system', code: 'SCEC_INTERNAL_ERROR' })
   })
 })
 
@@ -122,17 +139,23 @@ describe('scValToBigInt', () => {
     expect(scValToBigInt({ type: 'SCV_DURATION', duration: 4n })).toBe(4n)
     expect(scValToBigInt({ type: 'SCV_U128', u128: { hi: 1n, lo: 5n } })).toBe((1n << 64n) + 5n)
     expect(scValToBigInt({ type: 'SCV_I128', i128: { hi: -1n, lo: 0n } })).toBe(-(1n << 64n))
-    expect(scValToBigInt({
-      type: 'SCV_U256',
-      u256: { hi_hi: 0n, hi_lo: 0n, lo_hi: 0n, lo_lo: 9n },
-    })).toBe(9n)
-    expect(scValToBigInt({
-      type: 'SCV_I256',
-      i256: { hi_hi: -1n, hi_lo: 0n, lo_hi: 0n, lo_lo: 0n },
-    })).toBe(-(1n << 192n))
+    expect(
+      scValToBigInt({
+        type: 'SCV_U256',
+        u256: { hi_hi: 0n, hi_lo: 0n, lo_hi: 0n, lo_lo: 9n },
+      }),
+    ).toBe(9n)
+    expect(
+      scValToBigInt({
+        type: 'SCV_I256',
+        i256: { hi_hi: -1n, hi_lo: 0n, lo_hi: 0n, lo_lo: 0n },
+      }),
+    ).toBe(-(1n << 192n))
   })
 
   it('throws for non-integer variants', () => {
-    expect(() => scValToBigInt({ type: 'SCV_STRING', str: 'x' })).toThrow(/Expected integer-like SCVal/)
+    expect(() => scValToBigInt({ type: 'SCV_STRING', str: 'x' })).toThrow(
+      /Expected integer-like SCVal/,
+    )
   })
 })

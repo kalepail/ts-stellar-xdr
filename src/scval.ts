@@ -1,7 +1,6 @@
 import {
   type SCAddress,
   type SCError,
-  type SCMap,
   type SCMapEntry,
   type SCVal,
   type Int128Parts,
@@ -41,12 +40,7 @@ export type ScValIntegerType =
   | 'u256'
   | 'i256'
 
-export type ScValTypeHint =
-  | ScValIntegerType
-  | 'string'
-  | 'symbol'
-  | 'address'
-  | 'bytes'
+export type ScValTypeHint = ScValIntegerType | 'string' | 'symbol' | 'address' | 'bytes'
 
 export type ScValMapTypeHints = Record<
   string,
@@ -54,18 +48,15 @@ export type ScValMapTypeHints = Record<
 >
 
 export interface NativeToScValOptions {
-  type?:
-    | ScValTypeHint
-    | readonly (ScValTypeHint | null | undefined)[]
-    | ScValMapTypeHints
+  type?: ScValTypeHint | readonly (ScValTypeHint | null | undefined)[] | ScValMapTypeHints
 }
 
-const UINT32_MAX = 0xFFFFFFFFn
+const UINT32_MAX = 0xffffffffn
 const INT32_MIN = -0x80000000n
-const INT32_MAX = 0x7FFFFFFFn
-const UINT64_MAX = 0xFFFFFFFFFFFFFFFFn
+const INT32_MAX = 0x7fffffffn
+const UINT64_MAX = 0xffffffffffffffffn
 const INT64_MIN = -0x8000000000000000n
-const INT64_MAX = 0x7FFFFFFFFFFFFFFFn
+const INT64_MAX = 0x7fffffffffffffffn
 const UINT128_MAX = (1n << 128n) - 1n
 const INT128_MIN = -(1n << 127n)
 const INT128_MAX = (1n << 127n) - 1n
@@ -134,7 +125,10 @@ export function nativeToScVal(val: unknown, opts: NativeToScValOptions = {}): SC
       type: 'SCV_VEC',
       vec: val.map((item, i) => {
         const hintedType = types?.[i]
-        return nativeToScVal(item, hintedType === null || hintedType === undefined ? {} : { type: hintedType })
+        return nativeToScVal(
+          item,
+          hintedType === null || hintedType === undefined ? {} : { type: hintedType },
+        )
       }),
     }
   }
@@ -146,8 +140,14 @@ export function nativeToScVal(val: unknown, opts: NativeToScValOptions = {}): SC
       .map(([key, value]) => {
         const [keyType, valueType] = typeHints?.[key] ?? [null, null]
         return {
-          key: nativeToScVal(key, keyType === null || keyType === undefined ? {} : { type: keyType }),
-          val: nativeToScVal(value, valueType === null || valueType === undefined ? {} : { type: valueType }),
+          key: nativeToScVal(
+            key,
+            keyType === null || keyType === undefined ? {} : { type: keyType },
+          ),
+          val: nativeToScVal(
+            value,
+            valueType === null || valueType === undefined ? {} : { type: valueType },
+          ),
         }
       })
 
@@ -189,7 +189,9 @@ export function scValToNative(val: SCVal): unknown {
     case 'SCV_VEC':
       return (val.vec ?? []).map(scValToNative)
     case 'SCV_MAP':
-      return Object.fromEntries((val.map ?? []).map((entry) => [scValToNative(entry.key), scValToNative(entry.val)]))
+      return Object.fromEntries(
+        (val.map ?? []).map((entry) => [scValToNative(entry.key), scValToNative(entry.val)]),
+      )
     case 'SCV_ADDRESS':
       return toJsonSCAddress(val.address)
     case 'SCV_ERROR':
@@ -221,9 +223,13 @@ export function scValToBigInt(val: SCVal): bigint {
     case 'SCV_I128':
       return BigInt(int128PartsToDecimal(val.i128.hi, val.i128.lo))
     case 'SCV_U256':
-      return BigInt(uint256PartsToDecimal(val.u256.hi_hi, val.u256.hi_lo, val.u256.lo_hi, val.u256.lo_lo))
+      return BigInt(
+        uint256PartsToDecimal(val.u256.hi_hi, val.u256.hi_lo, val.u256.lo_hi, val.u256.lo_lo),
+      )
     case 'SCV_I256':
-      return BigInt(int256PartsToDecimal(val.i256.hi_hi, val.i256.hi_lo, val.i256.lo_hi, val.i256.lo_lo))
+      return BigInt(
+        int256PartsToDecimal(val.i256.hi_hi, val.i256.hi_lo, val.i256.lo_hi, val.i256.lo_lo),
+      )
     default:
       throw new TypeError(`Expected integer-like SCVal, got ${val.type}`)
   }
@@ -310,7 +316,10 @@ function strKeyToScAddress(strKey: string): SCAddress {
   if (strKey.startsWith('B')) {
     return {
       type: 'SC_ADDRESS_TYPE_CLAIMABLE_BALANCE',
-      claimableBalanceId: { type: 'CLAIMABLE_BALANCE_ID_TYPE_V0', v0: decodeClaimableBalance(strKey) },
+      claimableBalanceId: {
+        type: 'CLAIMABLE_BALANCE_ID_TYPE_V0',
+        v0: decodeClaimableBalance(strKey),
+      },
     }
   }
   if (strKey.startsWith('L')) {
@@ -319,7 +328,9 @@ function strKeyToScAddress(strKey: string): SCAddress {
   throw new TypeError(`Unsupported address strkey for SCAddress: ${strKey}`)
 }
 
-function scErrorToNative(error: SCError): { type: 'contract'; code: number } | { type: 'system'; code: string } {
+function scErrorToNative(
+  error: SCError,
+): { type: 'contract'; code: number } | { type: 'system'; code: string } {
   if (error.type === 'SCE_CONTRACT') {
     return { type: 'contract', code: error.contractCode }
   }
@@ -379,21 +390,21 @@ function isBytesLike(v: unknown): v is Uint8Array {
 }
 
 function isIntegerType(hint: ScValTypeHint): hint is ScValIntegerType {
-  return hint === 'u32'
-    || hint === 'i32'
-    || hint === 'u64'
-    || hint === 'i64'
-    || hint === 'timepoint'
-    || hint === 'duration'
-    || hint === 'u128'
-    || hint === 'i128'
-    || hint === 'u256'
-    || hint === 'i256'
+  return (
+    hint === 'u32' ||
+    hint === 'i32' ||
+    hint === 'u64' ||
+    hint === 'i64' ||
+    hint === 'timepoint' ||
+    hint === 'duration' ||
+    hint === 'u128' ||
+    hint === 'i128' ||
+    hint === 'u256' ||
+    hint === 'i256'
+  )
 }
 
-function asTypeHint(
-  type: NativeToScValOptions['type'],
-): ScValTypeHint | undefined {
+function asTypeHint(type: NativeToScValOptions['type']): ScValTypeHint | undefined {
   return typeof type === 'string' ? type : undefined
 }
 
