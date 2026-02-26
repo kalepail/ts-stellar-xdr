@@ -3,5 +3,4 @@ dist/
 dist-scripts/
 *.tsbuildinfo
 .DS_Store
-.claude/settings.local.json
-.claude/projects/
+.claude/
